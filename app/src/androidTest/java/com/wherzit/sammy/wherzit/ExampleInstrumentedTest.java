@@ -1,4 +1,4 @@
-package com.wherzit.sammy.wherezit;
+package com.wherzit.sammy.wherzit;
 
 import android.content.Context;
 import android.support.test.InstrumentationRegistry;
@@ -21,6 +21,6 @@ public class ExampleInstrumentedTest {
         // Context of the app under test.
         Context appContext = InstrumentationRegistry.getTargetContext();
 
-        assertEquals("com.wherzit.sammy.wherezit", appContext.getPackageName());
+        assertEquals("com.wherzit.sammy.wherzit", appContext.getPackageName());
     }
 }

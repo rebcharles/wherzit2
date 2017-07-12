@@ -1,4 +1,4 @@
-package com.wherzit.sammy.wherezit;
+package com.wherzit.sammy.wherzit;
 
 import org.junit.Test;
 

@@ -1,4 +1,4 @@
-package com.wherzit.sammy.wherezit;
+package com.wherzit.sammy.wherzit;
 
 import android.content.Intent;
 import android.os.Handler;
@@ -7,7 +7,7 @@ import android.os.Bundle;
 
 public class SplashActvity extends AppCompatActivity {
 
-    private static int SPLASH_TIMER = 1000;
+    private static int SPLASH_TIMER = 2000;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {

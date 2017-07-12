@@ -1,4 +1,4 @@
-package com.wherzit.sammy.wherezit;
+package com.wherzit.sammy.wherzit;
 
 import android.os.Bundle;
 import android.support.design.widget.FloatingActionButton;

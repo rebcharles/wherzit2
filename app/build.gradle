@@ -4,7 +4,7 @@ android {
     compileSdkVersion 26
     buildToolsVersion "26.0.0"
     defaultConfig {
-        applicationId "com.wherzit.sammy.wherezit"
+        applicationId "com.wherzit.sammy.wherzit"
         minSdkVersion 19
         targetSdkVersion 26
         versionCode 1
