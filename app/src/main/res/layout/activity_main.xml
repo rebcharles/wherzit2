@@ -1,19 +1,30 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:map="http://schemas.android.com/apk/res-auto"
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
     android:orientation="vertical" android:layout_width="match_parent"
     android:layout_height="match_parent">
 
-    <SearchView
-        android:layout_width="match_parent"
-        android:layout_height="91dp"
-        />
+
+        <fragment
+            android:id="@+id/map"
+            android:name="com.google.android.gms.maps.SupportMapFragment"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            tools:context="com.wherzit.sammy.wherzit.MainActivity" />
+
 
     <fragment
-        android:id="@+id/map"
-        android:name="com.google.android.gms.maps.SupportMapFragment"
+        android:id="@+id/placeAutocomplete"
+
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        tools:context="com.wherzit.sammy.wherzit.MainActivity" />
-</LinearLayout>
+        tools:context="com.wherzit.sammy.wherzit.MainActivity"
+        android:name="com.google.android.gms.location.places.ui.PlaceAutocompleteFragment" />
+
+
+
+
+</RelativeLayout>
+
+
+
