@@ -75,10 +75,6 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.O
                 .findFragmentById(R.id.map);
         mapFragment.getMapAsync(this);
 
-        latitudeText = (TextView) findViewById(R.id.latitude);
-        longitudeText = (TextView) findViewById(R.id.longitude);
-
-
         mGoogleApiClient = new GoogleApiClient
                 .Builder(this)
                 .addApi(Places.GEO_DATA_API)
@@ -175,6 +171,7 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.O
             return;
         }
 
+        //accessing current location
         LocationServices.FusedLocationApi.requestLocationUpdates(mGoogleApiClient, locationRequest, this);
         mMap.setMyLocationEnabled(true);
 
@@ -203,9 +200,6 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.O
         myLatitude = location.getLatitude();
         myLongitude = location.getLongitude();
 
-
-        latitudeText.setText(String.valueOf(myLatitude));
-        longitudeText.setText(String.valueOf(myLongitude));
         Log.i("Location", "Latitude: " + String.valueOf(myLatitude)
                 + "\n" + "Longitude: "+ String.valueOf(myLongitude));
 
@@ -281,19 +275,6 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.O
     @Override
     public void onMapReady(GoogleMap googleMap) {
         mMap = googleMap;
-
-            //marker for current location
-            LatLng currentLocation = new LatLng(myLatitude, myLongitude);
-            mMap.addMarker(new MarkerOptions().position(currentLocation).title("Current Location").draggable(true));
-            mMap.moveCamera(CameraUpdateFactory.newLatLng(currentLocation));
-
-
-
-
-//                // Add a marker in Sydney and move the camera
-//        LatLng newYork = new LatLng(40.7128, -74.0059);
-////        mMap.addMarker(new MarkerOptions().position().title("Marker in Sydney"));
-//        mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(newYork, 14.0f));
 
     }
 }

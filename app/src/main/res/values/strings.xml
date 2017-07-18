@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">Wherzit</string>
+    <string name="app_name">wherzit</string>
     <string name="title_activity_main">MainActivity</string>
     <string name="resultName"> </string>
     <string name="title_activity_routing">RoutingActivity</string>
