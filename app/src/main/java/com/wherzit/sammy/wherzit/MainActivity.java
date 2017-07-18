@@ -175,7 +175,6 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.O
             return;
         }
 
-        //accessing current location
         LocationServices.FusedLocationApi.requestLocationUpdates(mGoogleApiClient, locationRequest, this);
         mMap.setMyLocationEnabled(true);
 
@@ -284,10 +283,17 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.O
         mMap = googleMap;
 
             //marker for current location
-//            LatLng currentLocation = new LatLng(myLatitude, myLongitude);
-//            mMap.addMarker(new MarkerOptions().position(currentLocation).title("Current Location").draggable(true));
-//            mMap.moveCamera(CameraUpdateFactory.newLatLng(currentLocation));
+            LatLng currentLocation = new LatLng(myLatitude, myLongitude);
+            mMap.addMarker(new MarkerOptions().position(currentLocation).title("Current Location").draggable(true));
+            mMap.moveCamera(CameraUpdateFactory.newLatLng(currentLocation));
 
+
+
+
+//                // Add a marker in Sydney and move the camera
+//        LatLng newYork = new LatLng(40.7128, -74.0059);
+////        mMap.addMarker(new MarkerOptions().position().title("Marker in Sydney"));
+//        mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(newYork, 14.0f));
 
     }
 }
