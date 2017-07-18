@@ -174,7 +174,8 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.O
         //accessing current location
         LocationServices.FusedLocationApi.requestLocationUpdates(mGoogleApiClient, locationRequest, this);
         mMap.setMyLocationEnabled(true);
-        mMap.setPadding(10,10,0,0);
+        mMap.setPadding(00,110,100,0);
+
 
     }
 
