@@ -40,6 +40,7 @@ import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.LatLng;
+import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
 import com.wherzit.sammy.wherzit.MapActivity;
 
@@ -61,8 +62,8 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.O
     private FusedLocationProviderApi locationProvider = LocationServices.FusedLocationApi;
     LocationListener locationListener;
     LocationManager locationManager;
-    private Double myLatitude;
-    private Double myLongitude;
+    private double myLatitude;
+    private double myLongitude;
     private boolean permissionIsGranted = false;
 
 
@@ -167,6 +168,7 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.O
         }
 
         LocationServices.FusedLocationApi.requestLocationUpdates(mGoogleApiClient, locationRequest, this);
+        mMap.setMyLocationEnabled(true);
 
     }
 
@@ -225,6 +227,7 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.O
         super.onPause();
 
         if(permissionIsGranted) {
+
             //pausing the location service while application is not in use
             LocationServices.FusedLocationApi.removeLocationUpdates(mGoogleApiClient, this);
         }
@@ -271,10 +274,18 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.O
     public void onMapReady(GoogleMap googleMap) {
         mMap = googleMap;
 
-        // Add a marker in Sydney and move the camera
-        LatLng newYork = new LatLng(40.7128, -74.0059);
-//        mMap.addMarker(new MarkerOptions().position().title("Marker in Sydney"));
-        mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(newYork, 14.0f));
+            //marker for current location
+            LatLng currentLocation = new LatLng(myLatitude, myLongitude);
+            mMap.addMarker(new MarkerOptions().position(currentLocation).title("Current Location").draggable(true));
+            mMap.moveCamera(CameraUpdateFactory.newLatLng(currentLocation));
+
+
+
+
+//                // Add a marker in Sydney and move the camera
+//        LatLng newYork = new LatLng(40.7128, -74.0059);
+////        mMap.addMarker(new MarkerOptions().position().title("Marker in Sydney"));
+//        mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(newYork, 14.0f));
 
     }
 }
