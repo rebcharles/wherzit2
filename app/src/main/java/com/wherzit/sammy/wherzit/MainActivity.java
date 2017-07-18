@@ -111,11 +111,7 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.O
                 } else {
                     mMap.addMarker(new MarkerOptions().position(place.getLatLng()));
                     mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(place.getLatLng(), 15.0f));
-//                    FragmentManager fragmentManager = getSupportFragmentManager();
-//                    fragmentManager.beginTransaction()
-//                                    .show(getSupportFragmentManager()
-//                                    .findFragmentById(R.id.autocompleteResult))
-//                                    .commit();
+
                     findViewById(R.id.autocompleteResult).setVisibility(View.VISIBLE);
                     ((TextView) findViewById(R.id.resultName)).setText(place.getName());
                     if(place.getRating() > 0.0){
