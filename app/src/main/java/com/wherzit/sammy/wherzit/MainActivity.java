@@ -41,7 +41,6 @@ import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.MarkerOptions;
-import com.wherzit.sammy.wherzit.MapActivity;
 
 
 /**
@@ -64,6 +63,7 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.O
     private Double myLatitude;
     private Double myLongitude;
     private boolean permissionIsGranted = false;
+    private Place selectedPlace;
 
 
     @Override
@@ -103,7 +103,7 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.O
 
             @Override
             public void onPlaceSelected(Place place) {
-                // TODO: Get info about the selected place.
+                selectedPlace = place;
 
                 if (mMap == null) {
                     Log.i(TAG, "MAP is null");
@@ -137,6 +137,18 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.O
                 Log.i(TAG, "An error occurred: " + status);
             }
 
+        });
+
+        final Button directionsButton = (Button) findViewById(R.id.directionsButton);
+        directionsButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                Intent i = new Intent(MainActivity.this, RoutingActivity.class);
+                Bundle bundle = new Bundle();
+                bundle.putString("destinationId", selectedPlace.getId());
+                i.putExtras(bundle);
+                startActivity(i);
+            }
         });
 
 
