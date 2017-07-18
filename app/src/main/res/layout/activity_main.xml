@@ -111,6 +111,8 @@
         <Button
             android:shape="ring"
             android:id="@+id/directionsButton"
+            tools:context="com.wherzit.sammy.wherzit.MainActivity"
+            android:onClick="directionsOnClick"
             android:text="GO!"
             android:textAlignment="center"
             android:scaleType="centerCrop"
