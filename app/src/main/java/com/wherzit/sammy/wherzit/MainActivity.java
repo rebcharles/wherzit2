@@ -97,44 +97,44 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.O
 
 
         //search bar for PlacePicker API
-        PlaceAutocompleteFragment autocompleteFragment = (PlaceAutocompleteFragment)
-                getFragmentManager().findFragmentById(R.id.placeAutocomplete);
-
-        autocompleteFragment.setOnPlaceSelectedListener(new PlaceSelectionListener() {
-
-            @Override
-            public void onPlaceSelected(Place place) {
-                selectedPlace = place;
-
-                if (mMap == null) {
-                    Log.i(TAG, "MAP is null");
-                } else {
-                    mMap.addMarker(new MarkerOptions().position(place.getLatLng()));
-                    mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(place.getLatLng(), 15.0f));
-
-                    findViewById(R.id.autocompleteResult).setVisibility(View.VISIBLE);
-                    ((TextView) findViewById(R.id.resultName)).setText(place.getName());
-                    if(place.getRating() > 0.0){
-                        ((RatingBar) findViewById(R.id.resultRating)).setRating(place.getRating());
-                        ((TextView) findViewById(R.id.ratingsNumber)).setText(Float.toString(place.getRating()));
-                        findViewById(R.id.ratingsResult).setVisibility(View.VISIBLE);
-                    } else {
-                        findViewById(R.id.ratingsResult).setVisibility(View.INVISIBLE);
-                    }
-
-                    Log.i(TAG, "Place: " + place.getName());
-                }
-
-
-            }
-
-            @Override
-            public void onError(Status status) {
-                // TODO: Handle the error.
-                Log.i(TAG, "An error occurred: " + status);
-            }
-
-        });
+//        PlaceAutocompleteFragment autocompleteFragment = (PlaceAutocompleteFragment)
+//                getFragmentManager().findFragmentById(R.id.placeAutocomplete);
+//
+//        autocompleteFragment.setOnPlaceSelectedListener(new PlaceSelectionListener() {
+//
+//            @Override
+//            public void onPlaceSelected(Place place) {
+//                selectedPlace = place;
+//
+//                if (mMap == null) {
+//                    Log.i(TAG, "MAP is null");
+//                } else {
+//                    mMap.addMarker(new MarkerOptions().position(place.getLatLng()));
+//                    mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(place.getLatLng(), 15.0f));
+//
+//                    findViewById(R.id.autocompleteResult).setVisibility(View.VISIBLE);
+//                    ((TextView) findViewById(R.id.resultName)).setText(place.getName());
+//                    if(place.getRating() > 0.0){
+//                        ((RatingBar) findViewById(R.id.resultRating)).setRating(place.getRating());
+//                        ((TextView) findViewById(R.id.ratingsNumber)).setText(Float.toString(place.getRating()));
+//                        findViewById(R.id.ratingsResult).setVisibility(View.VISIBLE);
+//                    } else {
+//                        findViewById(R.id.ratingsResult).setVisibility(View.INVISIBLE);
+//                    }
+//
+//                    Log.i(TAG, "Place: " + place.getName());
+//                }
+//
+//
+//            }
+//
+//            @Override
+//            public void onError(Status status) {
+//                // TODO: Handle the error.
+//                Log.i(TAG, "An error occurred: " + status);
+//            }
+//
+//        });
 
         final Button directionsButton = (Button) findViewById(R.id.directionsButton);
         directionsButton.setOnClickListener(new View.OnClickListener() {
@@ -177,6 +177,7 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.O
 
         LocationServices.FusedLocationApi.requestLocationUpdates(mGoogleApiClient, locationRequest, this);
         mMap.setMyLocationEnabled(true);
+        mMap.setPadding(10,10,0,0);
 
     }
 
