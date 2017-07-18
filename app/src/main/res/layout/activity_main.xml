@@ -5,6 +5,7 @@
     android:layout_height="match_parent">
 
 
+
     <fragment
         android:id="@+id/placeAutocomplete"
         android:layout_width="match_parent"
@@ -19,12 +20,42 @@
     <fragment
         android:id="@+id/map"
         android:name="com.google.android.gms.maps.SupportMapFragment"
-        android:layout_below="@id/placeAutocomplete"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         tools:context="com.wherzit.sammy.wherzit.MainActivity"
-        android:layout_alignParentEnd="true"
-        android:layout_alignParentBottom="true" />
+        android:layout_below="@+id/placeAutocomplete"
+        android:layout_alignParentStart="true" />
+
+    <TextView
+        android:id="@+id/location"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Location"
+        android:layout_alignBottom="@+id/latitude"
+        android:layout_toEndOf="@+id/latitude"
+        android:layout_marginStart="67dp"
+        android:layout_marginBottom="48dp" />
+
+    <TextView
+        android:id="@+id/longitude"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Longitude"
+        android:layout_marginTop="13dp"
+        android:layout_below="@+id/latitude"
+        android:layout_alignStart="@+id/latitude" />
+
+    <TextView
+        android:id="@+id/latitude"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Latitude"
+        android:layout_below="@+id/placeAutocomplete"
+        android:layout_alignParentStart="true"
+        android:layout_marginStart="24dp"
+        android:layout_marginTop="147dp" />
+
+
 
 
 </RelativeLayout>

@@ -6,6 +6,7 @@ import android.content.Context;
 import android.content.pm.PackageManager;
 import android.location.Location;
 import android.location.LocationManager;
+import android.os.Build;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
@@ -32,7 +33,8 @@ import com.google.android.gms.location.places.ui.PlaceSelectionListener;
  * Created by sammy on 7/13/17.
  */
 
-public class MainActivity extends AppCompatActivity implements GoogleApiClient.OnConnectionFailedListener, GoogleApiClient.ConnectionCallbacks, LocationListener {
+public class MainActivity extends AppCompatActivity implements GoogleApiClient.OnConnectionFailedListener,
+        GoogleApiClient.ConnectionCallbacks, LocationListener {
 
 
     TextView latitudeText;
@@ -45,13 +47,17 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.O
     LocationListener locationListener;
     LocationManager locationManager;
     private Double myLatitude;
-    private double myLongitude;
+    private Double myLongitude;
+    private boolean permissionIsGranted = false;
 
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+
+        latitudeText = (TextView) findViewById(R.id.latitude);
+        longitudeText = (TextView) findViewById(R.id.longitude);
 
 
         mGoogleApiClient = new GoogleApiClient
@@ -103,14 +109,18 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.O
 
     private void requestLocationUpdates() {
 
-        if (ActivityCompat.checkSelfPermission(this, permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this, permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
-            // TODO: Consider calling
-            //    ActivityCompat#requestPermissions
-            // here to request the missing permissions, and then overriding
-            //   public void onRequestPermissionsResult(int requestCode, String[] permissions,
-            //                                          int[] grantResults)
-            // to handle the case where the user grants the permission. See the documentation
-            // for ActivityCompat#requestPermissions for more details.
+        //checking permissions
+        if (ActivityCompat.checkSelfPermission(this, permission.ACCESS_FINE_LOCATION)
+                != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this,
+                permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+
+            //asking users permission to access location
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+
+                requestPermissions(new String[] {permission.ACCESS_FINE_LOCATION}, 1);
+
+            }
+
             return;
         }
 
@@ -141,10 +151,11 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.O
         myLatitude = location.getLatitude();
         myLongitude = location.getLongitude();
 
-        latitudeText.setText("Latitude:  " + String.valueOf(myLatitude));
-        longitudeText.setText("Longitude:" + String.valueOf(myLongitude));
 
-        Log.i("Location", "Latitude: " + String.valueOf(myLatitude) + "\n" + "Longitude: "+ String.valueOf(myLongitude));
+        latitudeText.setText(String.valueOf(myLatitude));
+        longitudeText.setText(String.valueOf(myLongitude));
+        Log.i("Location", "Latitude: " + String.valueOf(myLatitude)
+                + "\n" + "Longitude: "+ String.valueOf(myLongitude));
 
     }
 
@@ -158,9 +169,12 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.O
     protected void onResume() {
         super.onResume();
 
-        if(mGoogleApiClient.isConnected()) {
+        if(permissionIsGranted) {
 
-            requestLocationUpdates();
+            if (mGoogleApiClient.isConnected()) {
+
+                requestLocationUpdates();
+            }
         }
     }
 
@@ -168,14 +182,47 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.O
     protected void onPause() {
         super.onPause();
 
-        //pausing the location service while application is not in use
-        LocationServices.FusedLocationApi.removeLocationUpdates(mGoogleApiClient,this);
+        if(permissionIsGranted) {
+            //pausing the location service while application is not in use
+            LocationServices.FusedLocationApi.removeLocationUpdates(mGoogleApiClient, this);
+        }
     }
 
     @Override
     protected void onStop() {
         super.onStop();
-        mGoogleApiClient.disconnect();
+
+        if(permissionIsGranted) {
+            mGoogleApiClient.disconnect();
+        }
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions,
+                                           @NonNull int[] grantResults) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+
+        switch (requestCode) {
+
+            case 1:
+                //permission granted
+                if (grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+
+                    permissionIsGranted = true;
+
+                }
+                //permission denied
+                else {
+                
+                    permissionIsGranted = false;
+                    Toast.makeText(getApplicationContext(), "This app requires location " +
+                            "permissions to be granted", Toast.LENGTH_SHORT).show();
+    
+                }
+
+                break;
+
+        }
     }
 }
 
