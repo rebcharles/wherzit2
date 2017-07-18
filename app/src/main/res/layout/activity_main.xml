@@ -61,7 +61,7 @@
     <RelativeLayout
         android:id="@+id/autocompleteResult"
         android:layout_width="match_parent"
-        android:layout_height="80dp"
+        android:layout_height="140dp"
         android:visibility="invisible"
         android:background="@color/white"
         tools:context="com.wherzit.sammy.wherzit.MainActivity"
@@ -108,12 +108,23 @@
                 android:layout_width="wrap_content"
                 android:layout_height="20dp" />
         </LinearLayout>
+        <Button
+            android:shape="ring"
+            android:id="@+id/directionsButton"
+            android:text="GO!"
+            android:textAlignment="center"
+            android:scaleType="centerCrop"
+            android:src="@drawable/green_light"
+            android:background="@drawable/green_light"
+            android:layout_width="80dp"
+            android:layout_height="40dp"
+            android:layout_alignParentBottom="true"
+            android:layout_centerInParent="true"
+            android:layout_below="@id/ratingsResult"
+            />
     </RelativeLayout>
 
-    <Button
-        android:id="@+id/directionsButton"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content" />
+
 
 
 </RelativeLayout>
