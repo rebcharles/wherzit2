@@ -10,6 +10,7 @@
         android:id="@+id/placeAutocomplete"
         android:layout_width="match_parent"
         android:layout_height="50dp"
+        android:background="@android:drawable/dialog_holo_light_frame"
         tools:context="com.wherzit.sammy.wherzit.MainActivity"
         android:name="com.google.android.gms.location.places.ui.PlaceAutocompleteFragment"
         android:layout_alignParentTop="true"
@@ -56,6 +57,63 @@
         android:layout_marginTop="147dp" />
 
 
+
+    <RelativeLayout
+        android:id="@+id/autocompleteResult"
+        android:layout_width="match_parent"
+        android:layout_height="80dp"
+        android:visibility="invisible"
+        android:background="@color/white"
+        tools:context="com.wherzit.sammy.wherzit.MainActivity"
+        android:elevation="7dp"
+        android:layout_alignParentEnd="true"
+        android:layout_alignParentBottom="true">
+
+        <TextView
+            android:id="@+id/resultName"
+            android:layout_width="wrap_content"
+            android:layout_height="40dp"
+            android:fontFamily="Arial"
+            android:textSize="25sp"
+            android:textColor="#000000"
+            android:text="@string/resultName"
+            android:layout_marginLeft="10dp"
+            />
+        <LinearLayout
+            android:id="@+id/ratingsResult"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:visibility="invisible"
+            android:layout_below="@+id/resultName"
+            android:layout_marginTop="5dp"
+            android:layout_marginLeft="10dp">
+            <TextView
+                android:id="@+id/ratingsNumber"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textColor="@android:color/holo_orange_light"
+                android:text=""
+                android:fontFamily="Arial"
+                android:textSize="15sp"
+                android:layout_marginRight="5dp"
+                />
+            <RatingBar
+                style="?android:attr/ratingBarStyleSmall"
+                android:id="@+id/resultRating"
+                android:isIndicator="true"
+                android:stepSize="0.1"
+                android:numStars="5"
+                android:rating="0"
+                android:layout_width="wrap_content"
+                android:layout_height="20dp" />
+        </LinearLayout>
+    </RelativeLayout>
+
+    <Button
+        android:id="@+id/directionsButton"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content" />
 
 
 </RelativeLayout>

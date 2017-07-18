@@ -6,17 +6,25 @@ import android.content.Context;
 import android.content.pm.PackageManager;
 import android.location.Location;
 import android.location.LocationManager;
+import android.content.Intent;
 import android.os.Build;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
+import android.support.v4.app.FragmentManager;
 import android.support.v7.app.AppCompatActivity;
+import android.support.v4.app.FragmentActivity;
 import android.util.Log;
+import android.view.View;
+import android.webkit.WebView;
+import android.widget.Button;
+import android.widget.RatingBar;
 import android.widget.TextView;
 import android.widget.Toast;
 import com.google.android.gms.common.api.GoogleApiClient;
+import com.google.android.gms.common.api.GoogleApiClient.OnConnectionFailedListener;
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.api.Status;
 import com.google.android.gms.location.FusedLocationProviderApi;
@@ -27,6 +35,13 @@ import com.google.android.gms.location.places.Place;
 import com.google.android.gms.location.places.Places;
 import com.google.android.gms.location.places.ui.PlaceAutocompleteFragment;
 import com.google.android.gms.location.places.ui.PlaceSelectionListener;
+import com.google.android.gms.maps.CameraUpdateFactory;
+import com.google.android.gms.maps.GoogleMap;
+import com.google.android.gms.maps.OnMapReadyCallback;
+import com.google.android.gms.maps.SupportMapFragment;
+import com.google.android.gms.maps.model.LatLng;
+import com.google.android.gms.maps.model.MarkerOptions;
+import com.wherzit.sammy.wherzit.MapActivity;
 
 
 /**
@@ -34,14 +49,14 @@ import com.google.android.gms.location.places.ui.PlaceSelectionListener;
  */
 
 public class MainActivity extends AppCompatActivity implements GoogleApiClient.OnConnectionFailedListener,
-        GoogleApiClient.ConnectionCallbacks, LocationListener {
-
+        GoogleApiClient.ConnectionCallbacks, LocationListener, OnMapReadyCallback {
 
     TextView latitudeText;
     TextView longitudeText;
 
     private GoogleApiClient mGoogleApiClient;
     private static final String TAG = "MainActivity";
+    private GoogleMap mMap;
     private LocationRequest locationRequest;
     private FusedLocationProviderApi locationProvider = LocationServices.FusedLocationApi;
     LocationListener locationListener;
@@ -55,6 +70,9 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.O
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+        SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager()
+                .findFragmentById(R.id.map);
+        mapFragment.getMapAsync(this);
 
         latitudeText = (TextView) findViewById(R.id.latitude);
         longitudeText = (TextView) findViewById(R.id.longitude);
@@ -86,7 +104,31 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.O
             @Override
             public void onPlaceSelected(Place place) {
                 // TODO: Get info about the selected place.
-                Log.i(TAG, "Place: " + place.getName());
+
+                if (mMap == null) {
+                    Log.i(TAG, "MAP is null");
+                } else {
+                    mMap.addMarker(new MarkerOptions().position(place.getLatLng()));
+                    mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(place.getLatLng(), 15.0f));
+//                    FragmentManager fragmentManager = getSupportFragmentManager();
+//                    fragmentManager.beginTransaction()
+//                                    .show(getSupportFragmentManager()
+//                                    .findFragmentById(R.id.autocompleteResult))
+//                                    .commit();
+                    findViewById(R.id.autocompleteResult).setVisibility(View.VISIBLE);
+                    ((TextView) findViewById(R.id.resultName)).setText(place.getName());
+                    if(place.getRating() > 0.0){
+                        ((RatingBar) findViewById(R.id.resultRating)).setRating(place.getRating());
+                        ((TextView) findViewById(R.id.ratingsNumber)).setText(Float.toString(place.getRating()));
+                        findViewById(R.id.ratingsResult).setVisibility(View.VISIBLE);
+                    } else {
+                        findViewById(R.id.ratingsResult).setVisibility(View.INVISIBLE);
+                    }
+
+                    Log.i(TAG, "Place: " + place.getName());
+                }
+
+
             }
 
             @Override
@@ -213,16 +255,27 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.O
                 }
                 //permission denied
                 else {
-                
+
                     permissionIsGranted = false;
                     Toast.makeText(getApplicationContext(), "This app requires location " +
                             "permissions to be granted", Toast.LENGTH_SHORT).show();
-    
+
                 }
 
                 break;
 
         }
+    }
+
+    @Override
+    public void onMapReady(GoogleMap googleMap) {
+        mMap = googleMap;
+
+        // Add a marker in Sydney and move the camera
+        LatLng newYork = new LatLng(40.7128, -74.0059);
+//        mMap.addMarker(new MarkerOptions().position().title("Marker in Sydney"));
+        mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(newYork, 14.0f));
+
     }
 }
 
