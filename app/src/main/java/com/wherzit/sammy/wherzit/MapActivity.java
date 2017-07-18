@@ -1,18 +1,21 @@
 package com.wherzit.sammy.wherzit;
 
-import android.support.v4.app.FragmentActivity;
 import android.os.Bundle;
-
+import android.support.v4.app.FragmentActivity;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
+import com.google.android.gms.maps.MapFragment;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.LatLng;
-import com.google.android.gms.maps.model.MarkerOptions;
+
+
 
 public class MapActivity extends FragmentActivity implements OnMapReadyCallback {
-
     private GoogleMap mMap;
+    private MapFragment currentLocation;
+
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -22,7 +25,10 @@ public class MapActivity extends FragmentActivity implements OnMapReadyCallback 
         SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager()
                 .findFragmentById(R.id.map);
         mapFragment.getMapAsync(this);
+
     }
+
+
 
 
     /**
@@ -42,5 +48,11 @@ public class MapActivity extends FragmentActivity implements OnMapReadyCallback 
         LatLng newYork = new LatLng(40.7128, -74.0059);
 //        mMap.addMarker(new MarkerOptions().position().title("Marker in Sydney"));
         mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(newYork, 14.0f));
+
+
     }
 }
+
+
+
+
