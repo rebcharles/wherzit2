@@ -26,40 +26,6 @@
         android:layout_alignParentEnd="true"
         android:layout_alignParentBottom="true" />
 
-    <TextView
-        android:id="@+id/location"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:textSize="24sp"
-        android:text="My Location"
-        android:layout_alignBottom="@+id/latitude"
-        android:layout_marginStart="10dp"
-        android:layout_marginBottom="61dp"
-        android:layout_below="@+id/placeAutocomplete" />
-
-    <TextView
-        android:id="@+id/latitude"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:textSize="18sp"
-        android:text="Latitude"
-        android:layout_alignParentTop="true"
-        android:layout_below="@+id/location"
-        android:layout_alignStart="@+id/longitude"
-        android:layout_marginTop="129dp"/>
-
-    <TextView
-        android:id="@+id/longitude"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:textSize="18sp"
-        android:text="Longitude"
-        android:layout_marginStart="16dp"
-        android:layout_marginTop="30dp"
-        android:layout_below="@+id/latitude"
-        android:layout_alignBottom="@+id/latitude"
-        />
-
 
 </RelativeLayout>
 

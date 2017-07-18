@@ -15,7 +15,6 @@ import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.widget.TextView;
 import android.widget.Toast;
-
 import com.google.android.gms.common.api.GoogleApiClient;
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.api.Status;
@@ -54,8 +53,6 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.O
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        latitudeText = (TextView) findViewById(R.id.latitude);
-        longitudeText = (TextView) findViewById(R.id.longitude);
 
         mGoogleApiClient = new GoogleApiClient
                 .Builder(this)
