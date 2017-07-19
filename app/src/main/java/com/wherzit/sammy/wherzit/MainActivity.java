@@ -64,7 +64,7 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.O
     private double myLatitude;
     private double myLongitude;
     private boolean permissionIsGranted = false;
-    private Place selectedPlace;
+    protected Place selectedPlace;
 
 
     @Override

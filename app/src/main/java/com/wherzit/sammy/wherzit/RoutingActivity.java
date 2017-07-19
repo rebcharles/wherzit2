@@ -15,12 +15,14 @@ import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.util.Log;
 import android.view.View;
+import android.widget.RatingBar;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.api.GoogleApiClient;
 import com.google.android.gms.common.api.ResultCallback;
-import com.google.android.gms.common.data.DataHolder;
+import com.google.android.gms.common.api.Status;
 import com.google.android.gms.location.FusedLocationProviderApi;
 import com.google.android.gms.location.LocationListener;
 import com.google.android.gms.location.LocationRequest;
@@ -29,10 +31,13 @@ import com.google.android.gms.location.places.Place;
 import com.google.android.gms.location.places.PlaceBuffer;
 import com.google.android.gms.location.places.Places;
 import com.google.android.gms.location.places.ui.PlaceAutocompleteFragment;
+import com.google.android.gms.location.places.ui.PlaceSelectionListener;
+import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.LatLng;
+import com.google.android.gms.maps.model.MarkerOptions;
 
 import static android.webkit.ConsoleMessage.MessageLevel.LOG;
 
@@ -50,6 +55,8 @@ public class RoutingActivity extends AppCompatActivity implements GoogleApiClien
     private double myLatitude;
     private double myLongitude;
     private boolean permissionIsGranted = false;
+    private Place origin = null;
+    private Place destinationChanged = null;
     private String destinationId;
 
 
@@ -96,7 +103,6 @@ public class RoutingActivity extends AppCompatActivity implements GoogleApiClien
 
                         places.release();
                     }
-
                 });
 
         //Origin
@@ -104,7 +110,66 @@ public class RoutingActivity extends AppCompatActivity implements GoogleApiClien
                 getFragmentManager().findFragmentById(R.id.autocompleteOrigin);
         originFragment.setHint("Current location");
 
+        LatLng locationOrigin= new LatLng (myLatitude,myLongitude);
 
+        originFragment.setOnPlaceSelectedListener(new PlaceSelectionListener() {
+
+            @Override
+            public void onPlaceSelected(Place place) {
+
+                    origin = place;
+
+                    if (mMap == null) {
+                        Log.i(TAG, "MAP is null");
+                    } else {
+                        mMap.addMarker(new MarkerOptions().position(place.getLatLng()));
+                        mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(place.getLatLng(), 12.0f));
+                        Log.i(TAG, "Place: " + place.getName());
+                    }
+
+            }
+
+            @Override
+            public void onError(Status status) {
+                Log.i(TAG, "An error occurred: " + status);
+            }
+
+
+        });
+
+
+
+
+        //Destination
+        PlaceAutocompleteFragment destFragment = (PlaceAutocompleteFragment)
+                getFragmentManager().findFragmentById(R.id.autocompleteDest);
+        destFragment.setHint(destination != null ?
+                destination.getName() :"Choose a destination");
+
+
+        destFragment.setOnPlaceSelectedListener(new PlaceSelectionListener() {
+
+            @Override
+            public void onPlaceSelected(Place place) {
+
+                destinationChanged = place;
+
+                if (mMap == null) {
+                    Log.i(TAG, "MAP is null");
+                } else {
+                    mMap.addMarker(new MarkerOptions().position(place.getLatLng()));
+                    mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(place.getLatLng(), 12.0f));
+                    Log.i(TAG, "Place: " + place.getName());
+                }
+
+            }
+
+            @Override
+            public void onError(Status status) {
+                Log.i(TAG, "An error occurred: " + status);
+            }
+
+        });
 
 
     }
