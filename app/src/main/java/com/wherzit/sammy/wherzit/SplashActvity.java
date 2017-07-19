@@ -10,7 +10,7 @@ import android.view.animation.AnimationUtils;
 
 public class SplashActvity extends AppCompatActivity {
 
-    private static int SPLASH_TIMER = 2200;
+    private static int SPLASH_TIMER = 2800;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
