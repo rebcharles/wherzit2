@@ -27,6 +27,7 @@ import com.google.android.gms.location.LocationServices;
 import com.google.android.gms.location.places.Place;
 import com.google.android.gms.location.places.PlaceBuffer;
 import com.google.android.gms.location.places.Places;
+import com.google.android.gms.location.places.ui.PlaceAutocompleteFragment;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
@@ -35,7 +36,7 @@ import com.google.android.gms.maps.model.LatLng;
 public class RoutingActivity extends AppCompatActivity implements GoogleApiClient.OnConnectionFailedListener,
         GoogleApiClient.ConnectionCallbacks, LocationListener, OnMapReadyCallback {
 
-    private Place startLoc;
+    private Place destination;
     private static final String TAG = "RoutingActivity";
     private GoogleApiClient mGoogleApiClient;
     private GoogleMap mMap;
@@ -66,22 +67,40 @@ public class RoutingActivity extends AppCompatActivity implements GoogleApiClien
                 .addOnConnectionFailedListener(this)
                 .enableAutoManage(this, this)
                 .build();
+        locationRequest = new LocationRequest();
+        locationRequest.setInterval(60 * 1000);
+        locationRequest.setFastestInterval(15 * 1000);
+        locationRequest.setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY);
 
-        String startLocId = (String) savedInstanceState.get("destinationId");
+        String destinationId = getIntent().getExtras().getString("destinationId");
 
-        Places.GeoDataApi.getPlaceById(mGoogleApiClient, startLocId)
+        Places.GeoDataApi.getPlaceById(mGoogleApiClient, destinationId)
                 .setResultCallback(new ResultCallback<PlaceBuffer>() {
                     @Override
                     public void onResult(PlaceBuffer places) {
                         if (places.getStatus().isSuccess() && places.getCount() > 0) {
                             final Place myPlace = places.get(0);
+                            destination = myPlace;
                             Log.i(TAG, "Place found: " + myPlace.getName());
                         } else {
                             Log.e(TAG, "Place not found");
                         }
                         places.release();
+
                     }
                 });
+
+        //Origin
+        PlaceAutocompleteFragment originFragment = (PlaceAutocompleteFragment)
+                getFragmentManager().findFragmentById(R.id.autocompleteOrigin);
+        originFragment.setHint("Current location");
+
+        //Destination
+        PlaceAutocompleteFragment destFragment = (PlaceAutocompleteFragment)
+                getFragmentManager().findFragmentById(R.id.autocompleteDest);
+        originFragment.setHint(destination != null ?
+                destination.getName() :"Choose a destination!");
+
 
     }
 
@@ -112,7 +131,7 @@ public class RoutingActivity extends AppCompatActivity implements GoogleApiClien
         //accessing current location
         LocationServices.FusedLocationApi.requestLocationUpdates(mGoogleApiClient, locationRequest, this);
         mMap.setMyLocationEnabled(true);
-        mMap.setPadding(0,150,0,0);
+        mMap.setPadding(0,200,0,0);
 
 
     }
