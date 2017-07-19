@@ -12,7 +12,7 @@
         android:layout_height="69dp"
         android:layout_marginLeft="8dp"
         android:layout_marginRight="8dp"
-        android:layout_marginTop="128dp"
+        android:layout_marginTop="51dp"
         android:ems="10"
         android:text="@string/app_name"
         android:textAllCaps="false"
@@ -24,28 +24,24 @@
         app:layout_constraintTop_toTopOf="parent"
         android:layout_marginStart="8dp"
         android:layout_marginEnd="8dp"
+        app:layout_constraintHorizontal_bias="0.503"
         android:layout_marginBottom="8dp"
-        app:layout_constraintBottom_toTopOf="@+id/imageView3"
-        app:layout_constraintVertical_bias="1.0" />
+        app:layout_constraintBottom_toTopOf="@+id/imageView"
+        app:layout_constraintVertical_bias="0.313" />
 
     <ImageView
-        android:id="@+id/imageView3"
-        android:layout_width="362dp"
-        android:layout_height="239dp"
-        android:padding="0dp"
-        android:paddingBottom="0dp"
-        android:paddingEnd="0dp"
-        android:paddingLeft="0dp"
-        android:paddingRight="0dp"
-        android:paddingStart="0dp"
-        android:paddingTop="0dp"
-        app:srcCompat="@drawable/logo_screenshot"
-        app:layout_constraintBottom_toBottomOf="parent"
-        android:layout_marginBottom="185dp"
-        android:layout_marginRight="8dp"
-        app:layout_constraintRight_toRightOf="parent"
+        android:id="@+id/imageView"
+        android:layout_width="278dp"
+        android:layout_height="252dp"
+        android:layout_marginBottom="140dp"
+        android:layout_marginEnd="8dp"
         android:layout_marginLeft="8dp"
+        android:layout_marginRight="8dp"
+        android:layout_marginStart="8dp"
+        android:scaleType="fitCenter"
+        app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintLeft_toLeftOf="parent"
-        app:layout_constraintHorizontal_bias="0.484" />
+        app:layout_constraintRight_toRightOf="parent"
+        app:srcCompat="@drawable/logo" />
 
 </android.support.constraint.ConstraintLayout>
