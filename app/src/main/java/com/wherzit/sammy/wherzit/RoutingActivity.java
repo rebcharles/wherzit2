@@ -15,6 +15,7 @@ import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.util.Log;
 import android.view.View;
+import android.widget.LinearLayout;
 import android.widget.RatingBar;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -65,6 +66,11 @@ public class RoutingActivity extends AppCompatActivity implements GoogleApiClien
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_routing);
 
+        //making background transparent
+        LinearLayout background = (LinearLayout) findViewById(R.id.background);
+        background.setAlpha((float)0.7);
+
+        //creating map background
         SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager()
                 .findFragmentById(R.id.routingMap);
         mapFragment.getMapAsync(this);
@@ -112,6 +118,7 @@ public class RoutingActivity extends AppCompatActivity implements GoogleApiClien
 
         LatLng locationOrigin= new LatLng (myLatitude,myLongitude);
 
+        //if user changes origin 
         originFragment.setOnPlaceSelectedListener(new PlaceSelectionListener() {
 
             @Override
@@ -146,7 +153,7 @@ public class RoutingActivity extends AppCompatActivity implements GoogleApiClien
         destFragment.setHint(destination != null ?
                 destination.getName() :"Choose a destination");
 
-
+        //if user changes destination
         destFragment.setOnPlaceSelectedListener(new PlaceSelectionListener() {
 
             @Override
