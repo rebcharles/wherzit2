@@ -118,7 +118,7 @@ public class RoutingActivity extends AppCompatActivity implements GoogleApiClien
 
         LatLng locationOrigin= new LatLng (myLatitude,myLongitude);
 
-        //if user changes origin 
+        //if user changes origin
         originFragment.setOnPlaceSelectedListener(new PlaceSelectionListener() {
 
             @Override
