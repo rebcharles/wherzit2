@@ -23,4 +23,7 @@
     <string name="google_maps_key" templateMergeStrategy="preserve" translatable="false">
          AIzaSyAaKlzNTCmi0T9PBizi9euJ5yoMjqtVDHo
     </string>
+    <string name="google_directions_key" templateMergeStrategy="preserve" translatable="false">
+        AIzaSyA2rszU86a0C5GMAKZ8lcjVlPBF-FxOUN0
+    </string>
 </resources>

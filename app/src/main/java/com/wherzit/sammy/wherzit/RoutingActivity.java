@@ -4,6 +4,7 @@ import android.Manifest;
 import android.content.pm.PackageManager;
 import android.location.Location;
 import android.location.LocationManager;
+import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
@@ -39,8 +40,28 @@ import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.MarkerOptions;
+import com.google.android.gms.maps.model.Polyline;
+import com.google.android.gms.maps.model.PolylineOptions;
+import com.google.maps.android.PolyUtil;
+
+import org.json.JSONException;
+import org.json.JSONObject;
+
+import java.io.BufferedInputStream;
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.net.HttpURLConnection;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.util.List;
+import java.util.concurrent.ExecutionException;
+
+import javax.net.ssl.HttpsURLConnection;
 
 import static android.webkit.ConsoleMessage.MessageLevel.LOG;
+import static com.wherzit.sammy.wherzit.R.string.google_maps_key;
 
 public class RoutingActivity extends AppCompatActivity implements GoogleApiClient.OnConnectionFailedListener,
         GoogleApiClient.ConnectionCallbacks, LocationListener, OnMapReadyCallback {
@@ -132,7 +153,25 @@ public class RoutingActivity extends AppCompatActivity implements GoogleApiClien
                         mMap.addMarker(new MarkerOptions().position(place.getLatLng()));
                         mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(place.getLatLng(), 12.0f));
                         Log.i(TAG, "Place: " + place.getName());
+
+                        JSONObject json_response = null;
+                        try{
+                            json_response = new JSONObject(sendRequest());
+                            if(!json_response.get("status").equals("OK")){
+                                Log.e(TAG,"Error getting directions");
+                                Log.e(TAG, "Status: " + json_response.get("status"));
+                            } else {
+                                String encodedPolyline = json_response.getJSONArray("routes").getJSONObject(0).getJSONObject("overview_polyline").getString("points");
+                                List<LatLng> poly = PolyUtil.decode(encodedPolyline);
+                                mMap.addPolyline(new PolylineOptions().addAll(poly));
+                            }
+                        } catch (JSONException e ){
+                            Log.e(TAG, e.getMessage());
+                        }
+
                     }
+
+
 
             }
 
@@ -167,6 +206,22 @@ public class RoutingActivity extends AppCompatActivity implements GoogleApiClien
                     mMap.addMarker(new MarkerOptions().position(place.getLatLng()));
                     mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(place.getLatLng(), 12.0f));
                     Log.i(TAG, "Place: " + place.getName());
+
+                    JSONObject json_response = null;
+                    try{
+                        json_response = new JSONObject(sendRequest());
+                        if(!json_response.get("status").equals("OK")){
+                            Log.e(TAG,"Error getting directions");
+                            Log.e(TAG, "Status: " + json_response.get("status"));
+                        } else {
+                            String encodedPolyline = json_response.getJSONArray("routes").getJSONObject(0).getJSONObject("overview_polyline").getString("points");
+                            List<LatLng> poly = PolyUtil.decode(encodedPolyline);
+                            mMap.addPolyline(new PolylineOptions().addAll(poly));
+                        }
+                    } catch (JSONException e ){
+                        Log.e(TAG, e.getMessage());
+                    }
+
                 }
 
             }
@@ -238,6 +293,20 @@ public class RoutingActivity extends AppCompatActivity implements GoogleApiClien
 
         Log.i("Location", "Latitude: " + String.valueOf(myLatitude)
                 + "\n" + "Longitude: "+ String.valueOf(myLongitude));
+        JSONObject json_response = null;
+        try{
+            json_response = new JSONObject(sendRequest());
+            if(!json_response.get("status").equals("OK")){
+                Log.e(TAG,"Error getting directions");
+                Log.e(TAG, "Status: " + json_response.get("status"));
+            } else {
+                String encodedPolyline = json_response.getJSONArray("routes").getJSONObject(0).getJSONObject("overview_polyline").getString("points");
+                List<LatLng> poly = PolyUtil.decode(encodedPolyline);
+                mMap.addPolyline(new PolylineOptions().addAll(poly));
+            }
+        } catch (JSONException e ){
+            Log.e(TAG, e.getMessage());
+        }
 
     }
 
@@ -314,5 +383,96 @@ public class RoutingActivity extends AppCompatActivity implements GoogleApiClien
 
     }
 
+    public class  HTTPGetRequest  extends AsyncTask<String, Void, String> {
+
+        public static final String REQUEST_METHOD = "GET";
+        public static final int READ_TIMEOUT = 15000;
+        public static final int CONNECTION_TIMEOUT = 15000;
+
+        @Override
+        protected String doInBackground(String... params) {
+            String stringUrl = params[0];
+            String result = "";
+            String inputLine;
+
+
+            try {
+                //Create a URL object holding our url
+                URL myUrl = new URL(stringUrl);
+
+                //Create a connection
+                HttpsURLConnection connection =(HttpsURLConnection)
+                        myUrl.openConnection();
+
+                connection.setRequestMethod(REQUEST_METHOD);
+                connection.setReadTimeout(READ_TIMEOUT);
+                connection.setConnectTimeout(CONNECTION_TIMEOUT);
+
+                connection.connect();
+
+                InputStreamReader streamReader = new
+                        InputStreamReader(connection.getInputStream());
+
+                //Create a new buffered reader and String Builder
+                BufferedReader reader = new BufferedReader(streamReader);
+                StringBuilder stringBuilder = new StringBuilder();
+
+                //Check if the line we are reading is not null
+                while((inputLine = reader.readLine()) != null){
+                    stringBuilder.append(inputLine);
+                }
+
+                //Close our InputStream and Buffered reader
+                reader.close();
+                streamReader.close();
+
+                //Set our result equal to our stringBuilder
+                result = stringBuilder.toString();
+
+            } catch ( IOException e){
+                Log.e(TAG, e.getMessage());
+            }
+
+
+            return result;
+        }
+
+        @Override
+        protected void onPostExecute(String result) {
+            super.onPostExecute(result);
+        }
+    }
+    public String sendRequest() {
+        StringBuilder sb = new StringBuilder("https://maps.googleapis.com/maps/api/directions/json?");
+        sb.append("origin=");
+        if (origin != null) {
+            sb.append(origin.getLatLng().latitude);
+            sb.append(",");
+            sb.append(origin.getLatLng().longitude);
+        }else {
+            sb.append(myLatitude);
+            sb.append(",");
+            sb.append(myLongitude);
+        }
+        sb.append("&destination=");
+        if (destinationChanged != null) {
+            sb.append(destinationChanged.getLatLng());
+        } else {
+            sb.append("place_id:");
+            sb.append(destinationId);
+        }
+        sb.append("&key=");
+        sb.append(getResources().getString(R.string.google_directions_key));
+        Log.i(TAG, sb.toString());
+
+        String result = "";
+        HTTPGetRequest request = new HTTPGetRequest();
+        try {
+            result = request.execute(sb.toString()).get();
+        } catch (InterruptedException | ExecutionException e) {
+            Log.e(TAG, e.getMessage());
+        }
+        return result;
+    }
 
 }
