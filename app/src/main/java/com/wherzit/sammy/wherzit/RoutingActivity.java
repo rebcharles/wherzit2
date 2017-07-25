@@ -1,6 +1,7 @@
 package com.wherzit.sammy.wherzit;
 
 import android.Manifest;
+import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.location.Location;
 import android.location.LocationManager;
@@ -14,6 +15,7 @@ import android.support.design.widget.Snackbar;
 import android.support.v4.app.ActivityCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
+import android.text.Layout;
 import android.util.Log;
 import android.view.View;
 import android.widget.LinearLayout;
@@ -44,6 +46,7 @@ import com.google.android.gms.maps.model.Polyline;
 import com.google.android.gms.maps.model.PolylineOptions;
 import com.google.maps.android.PolyUtil;
 
+import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -55,6 +58,8 @@ import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
 
@@ -80,6 +85,9 @@ public class RoutingActivity extends AppCompatActivity implements GoogleApiClien
     private Place origin = null;
     private Place destinationChanged = null;
     private String destinationId;
+    List<Route> routes;
+    String encodedPolyline;
+    private JSONObject json_response;
 
 
     @Override
@@ -154,24 +162,22 @@ public class RoutingActivity extends AppCompatActivity implements GoogleApiClien
                         mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(place.getLatLng(), 12.0f));
                         Log.i(TAG, "Place: " + place.getName());
 
-                        JSONObject json_response = null;
-                        try{
+                        json_response = null;
+                        try {
                             json_response = new JSONObject(sendRequest());
-                            if(!json_response.get("status").equals("OK")){
-                                Log.e(TAG,"Error getting directions");
+                            if (!json_response.get("status").equals("OK")) {
+                                Log.e(TAG, "Error getting directions");
                                 Log.e(TAG, "Status: " + json_response.get("status"));
                             } else {
-                                String encodedPolyline = json_response.getJSONArray("routes").getJSONObject(0).getJSONObject("overview_polyline").getString("points");
+                                encodedPolyline = json_response.getJSONArray("routes").getJSONObject(0).getJSONObject("overview_polyline").getString("points");
                                 List<LatLng> poly = PolyUtil.decode(encodedPolyline);
                                 mMap.addPolyline(new PolylineOptions().addAll(poly));
                             }
-                        } catch (JSONException e ){
+                        } catch (JSONException e) {
                             Log.e(TAG, e.getMessage());
                         }
 
                     }
-
-
 
             }
 
@@ -207,14 +213,14 @@ public class RoutingActivity extends AppCompatActivity implements GoogleApiClien
                     mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(place.getLatLng(), 12.0f));
                     Log.i(TAG, "Place: " + place.getName());
 
-                    JSONObject json_response = null;
+                    json_response = null;
                     try{
                         json_response = new JSONObject(sendRequest());
                         if(!json_response.get("status").equals("OK")){
                             Log.e(TAG,"Error getting directions");
                             Log.e(TAG, "Status: " + json_response.get("status"));
                         } else {
-                            String encodedPolyline = json_response.getJSONArray("routes").getJSONObject(0).getJSONObject("overview_polyline").getString("points");
+                            encodedPolyline = json_response.getJSONArray("routes").getJSONObject(0).getJSONObject("overview_polyline").getString("points");
                             List<LatLng> poly = PolyUtil.decode(encodedPolyline);
                             mMap.addPolyline(new PolylineOptions().addAll(poly));
                         }
@@ -293,14 +299,16 @@ public class RoutingActivity extends AppCompatActivity implements GoogleApiClien
 
         Log.i("Location", "Latitude: " + String.valueOf(myLatitude)
                 + "\n" + "Longitude: "+ String.valueOf(myLongitude));
-        JSONObject json_response = null;
+
+        json_response = null;
+
         try{
             json_response = new JSONObject(sendRequest());
             if(!json_response.get("status").equals("OK")){
                 Log.e(TAG,"Error getting directions");
                 Log.e(TAG, "Status: " + json_response.get("status"));
             } else {
-                String encodedPolyline = json_response.getJSONArray("routes").getJSONObject(0).getJSONObject("overview_polyline").getString("points");
+                encodedPolyline = json_response.getJSONArray("routes").getJSONObject(0).getJSONObject("overview_polyline").getString("points");
                 List<LatLng> poly = PolyUtil.decode(encodedPolyline);
                 mMap.addPolyline(new PolylineOptions().addAll(poly));
             }
@@ -433,13 +441,18 @@ public class RoutingActivity extends AppCompatActivity implements GoogleApiClien
                 Log.e(TAG, e.getMessage());
             }
 
-
             return result;
         }
 
         @Override
         protected void onPostExecute(String result) {
+
             super.onPostExecute(result);
+            try {
+                parseJsonResponse(json_response.toString());
+            } catch (JSONException e) {
+                e.printStackTrace();
+            }
         }
     }
     public String sendRequest() {
@@ -472,7 +485,63 @@ public class RoutingActivity extends AppCompatActivity implements GoogleApiClien
         } catch (InterruptedException | ExecutionException e) {
             Log.e(TAG, e.getMessage());
         }
+
         return result;
+    }
+
+
+
+    private void parseJsonResponse(String data) throws JSONException {
+
+        if (data == null) { return;}
+
+
+        List<Route> routes=new ArrayList<Route>();
+
+        //organizing json response into variables and objects
+        JSONObject directions = new JSONObject(data);
+        JSONArray jsonRoutes = directions.getJSONArray("routes");
+        JSONObject routesOBJ = jsonRoutes.getJSONObject(0);
+        JSONArray jsonLegs= routesOBJ.getJSONArray("legs");
+        JSONObject legsOBJ = jsonLegs.getJSONObject(0);
+        JSONArray jsonSteps = legsOBJ.getJSONArray("steps");
+
+        for (int i = 0; i < jsonSteps.length(); i++) {
+
+            Route route= new Route();
+
+            //added details to each route
+            JSONObject stepsOBJ = jsonSteps.getJSONObject(i);
+            JSONObject jsonDistance = stepsOBJ.getJSONObject("distance");
+            JSONObject jsonDuration = stepsOBJ.getJSONObject("duration");
+            JSONObject jsonEnd = stepsOBJ.getJSONObject("end_location");
+            JSONObject jsonStart = stepsOBJ.getJSONObject("start_location");
+
+            route.startAddress = legsOBJ.getString("start_address");
+            route.endAddress = legsOBJ.getString("end_address");
+
+//                if (jsonDistance.has("maneuver")){
+//                    route.maneuver=new Maneuver(jsonDistance.getString("maneuver"));
+//                }
+
+            route.distance = new Distance(jsonDistance);
+            route.duration = new Duration(jsonDuration);
+            route.startLocation = new com.google.maps.model.LatLng(jsonStart.getDouble("lat"),jsonStart.getDouble("lng"));
+            route.endLocation = new com.google.maps.model.LatLng(jsonEnd.getDouble("lat"),jsonEnd.getDouble("lng"));
+
+            routes.add(route);
+
+
+            }
+
+        //try printing route list
+        for (int i = 0; i < routes.size(); i++) {
+            Route e = routes.get(i);
+
+            Route.printRoute(e);
+
+        }
+
     }
 
 }
