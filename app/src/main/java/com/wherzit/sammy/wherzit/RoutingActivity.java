@@ -166,7 +166,6 @@ public class RoutingActivity extends AppCompatActivity implements GoogleApiClien
                         mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(place.getLatLng(), 12.0f));
                         Log.i(TAG, "Place: " + place.getName());
 
-                        json_response = null;
                         try {
                             json_response = new JSONObject(sendRequest());
                             if (!json_response.get("status").equals("OK")) {
