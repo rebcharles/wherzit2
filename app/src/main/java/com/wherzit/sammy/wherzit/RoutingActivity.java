@@ -49,6 +49,7 @@ import com.google.maps.android.PolyUtil;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
+import org.w3c.dom.Text;
 
 import java.io.BufferedInputStream;
 import java.io.BufferedReader;
@@ -59,6 +60,7 @@ import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
@@ -88,12 +90,14 @@ public class RoutingActivity extends AppCompatActivity implements GoogleApiClien
     List<Route> routes;
     String encodedPolyline;
     private JSONObject json_response;
+    private HashMap<CharSequence, String> waypoints;
 
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_routing);
+        waypoints = new HashMap<CharSequence, String>();
 
         //making background transparent
         LinearLayout background = (LinearLayout) findViewById(R.id.background);
@@ -191,7 +195,74 @@ public class RoutingActivity extends AppCompatActivity implements GoogleApiClien
 
 
 
+        PlaceAutocompleteFragment stopFragment = (PlaceAutocompleteFragment)
+            getFragmentManager().findFragmentById(R.id.autocompleteStop);
+        stopFragment.setHint("Add a stop");
 
+        final TextView currentStops = (TextView) findViewById(R.id.currentStops);
+        if(!waypoints.isEmpty()){
+            StringBuilder stopNames = new StringBuilder();
+            int numWaypoints = waypoints.size() - 1;
+            int numNames = 0;
+            for(CharSequence key : waypoints.keySet()){
+                stopNames.append(key);
+                numNames++;
+                if(numNames < numWaypoints){
+                    stopNames.append(", ");
+                }
+            }
+            currentStops.setVisibility(View.VISIBLE);
+            currentStops.setText(stopNames.toString());
+        }
+
+        stopFragment.setOnPlaceSelectedListener(new PlaceSelectionListener() {
+            @Override
+            public void onPlaceSelected(Place place) {
+                waypoints.put(place.getName(),place.getId());
+                StringBuilder stopNames = new StringBuilder();
+                int numWaypoints = waypoints.size() - 1;
+                int numNames = 0;
+                for(CharSequence key : waypoints.keySet()){
+                    stopNames.append(key);
+                    numNames++;
+                    if(numNames < numWaypoints){
+                        stopNames.append(", ");
+                    }
+                }
+                currentStops.setVisibility(View.VISIBLE);
+                currentStops.setText(stopNames.toString());
+
+                if (mMap == null) {
+                    Log.i(TAG, "MAP is null");
+                } else {
+                    mMap.addMarker(new MarkerOptions().position(place.getLatLng()));
+                    mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(place.getLatLng(), 12.0f));
+                    Log.i(TAG, "Place: " + place.getName());
+
+                    json_response = null;
+                    try {
+                        json_response = new JSONObject(sendRequest());
+                        if (!json_response.get("status").equals("OK")) {
+                            Log.e(TAG, "Error getting directions");
+                            Log.e(TAG, "Status: " + json_response.get("status"));
+                        } else {
+                            encodedPolyline = json_response.getJSONArray("routes").getJSONObject(0).getJSONObject("overview_polyline").getString("points");
+                            List<LatLng> poly = PolyUtil.decode(encodedPolyline);
+                            mMap.addPolyline(new PolylineOptions().addAll(poly));
+                        }
+                    } catch (JSONException e) {
+                        Log.e(TAG, e.getMessage());
+                    }
+
+                }
+
+            }
+
+            @Override
+            public void onError(Status status) {
+
+            }
+        });
         //Destination
         PlaceAutocompleteFragment destFragment = (PlaceAutocompleteFragment)
                 getFragmentManager().findFragmentById(R.id.autocompleteDest);
@@ -474,8 +545,22 @@ public class RoutingActivity extends AppCompatActivity implements GoogleApiClien
             sb.append("place_id:");
             sb.append(destinationId);
         }
+        if(!waypoints.isEmpty()){
+            int numWaypoints = waypoints.size() -1;
+            int numAdded = 0;
+            sb.append("&waypoints=");
+            for(String value : waypoints.values()){
+                sb.append("place_id:");
+                sb.append(value);
+                numAdded++;
+                if(numAdded < numWaypoints)
+                    sb.append("|");
+            }
+        }
         sb.append("&key=");
         sb.append(getResources().getString(R.string.google_directions_key));
+
+
         Log.i(TAG, sb.toString());
 
         String result = "";
