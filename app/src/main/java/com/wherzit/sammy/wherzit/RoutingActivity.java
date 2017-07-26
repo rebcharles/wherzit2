@@ -13,6 +13,7 @@ import android.support.annotation.Nullable;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.Snackbar;
 import android.support.v4.app.ActivityCompat;
+import android.support.v4.app.FragmentManager;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.text.Layout;
@@ -159,29 +160,7 @@ public class RoutingActivity extends AppCompatActivity implements GoogleApiClien
 
                     origin = place;
 
-                    if (mMap == null) {
-                        Log.i(TAG, "MAP is null");
-                    } else {
-                        mMap.addMarker(new MarkerOptions().position(place.getLatLng()));
-                        mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(place.getLatLng(), 12.0f));
-                        Log.i(TAG, "Place: " + place.getName());
-
-                        json_response = null;
-                        try {
-                            json_response = new JSONObject(sendRequest());
-                            if (!json_response.get("status").equals("OK")) {
-                                Log.e(TAG, "Error getting directions");
-                                Log.e(TAG, "Status: " + json_response.get("status"));
-                            } else {
-                                encodedPolyline = json_response.getJSONArray("routes").getJSONObject(0).getJSONObject("overview_polyline").getString("points");
-                                List<LatLng> poly = PolyUtil.decode(encodedPolyline);
-                                mMap.addPolyline(new PolylineOptions().addAll(poly));
-                            }
-                        } catch (JSONException e) {
-                            Log.e(TAG, e.getMessage());
-                        }
-
-                    }
+                    placeMarker(place);
 
             }
 
@@ -199,62 +178,20 @@ public class RoutingActivity extends AppCompatActivity implements GoogleApiClien
             getFragmentManager().findFragmentById(R.id.autocompleteStop);
         stopFragment.setHint("Add a stop");
 
-        final TextView currentStops = (TextView) findViewById(R.id.currentStops);
+
         if(!waypoints.isEmpty()){
-            StringBuilder stopNames = new StringBuilder();
-            int numWaypoints = waypoints.size() - 1;
-            int numNames = 0;
-            for(CharSequence key : waypoints.keySet()){
-                stopNames.append(key);
-                numNames++;
-                if(numNames < numWaypoints){
-                    stopNames.append(", ");
-                }
-            }
-            currentStops.setVisibility(View.VISIBLE);
-            currentStops.setText(stopNames.toString());
+            updateStopsView();
         }
 
         stopFragment.setOnPlaceSelectedListener(new PlaceSelectionListener() {
             @Override
             public void onPlaceSelected(Place place) {
                 waypoints.put(place.getName(),place.getId());
-                StringBuilder stopNames = new StringBuilder();
-                int numWaypoints = waypoints.size() - 1;
-                int numNames = 0;
-                for(CharSequence key : waypoints.keySet()){
-                    stopNames.append(key);
-                    numNames++;
-                    if(numNames < numWaypoints){
-                        stopNames.append(", ");
-                    }
-                }
-                currentStops.setVisibility(View.VISIBLE);
-                currentStops.setText(stopNames.toString());
+                Log.i(TAG,String.valueOf(waypoints.size()));
+                updateStopsView();
 
-                if (mMap == null) {
-                    Log.i(TAG, "MAP is null");
-                } else {
-                    mMap.addMarker(new MarkerOptions().position(place.getLatLng()));
-                    mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(place.getLatLng(), 12.0f));
-                    Log.i(TAG, "Place: " + place.getName());
 
-                    json_response = null;
-                    try {
-                        json_response = new JSONObject(sendRequest());
-                        if (!json_response.get("status").equals("OK")) {
-                            Log.e(TAG, "Error getting directions");
-                            Log.e(TAG, "Status: " + json_response.get("status"));
-                        } else {
-                            encodedPolyline = json_response.getJSONArray("routes").getJSONObject(0).getJSONObject("overview_polyline").getString("points");
-                            List<LatLng> poly = PolyUtil.decode(encodedPolyline);
-                            mMap.addPolyline(new PolylineOptions().addAll(poly));
-                        }
-                    } catch (JSONException e) {
-                        Log.e(TAG, e.getMessage());
-                    }
-
-                }
+                placeMarker(place);
 
             }
 
@@ -277,29 +214,7 @@ public class RoutingActivity extends AppCompatActivity implements GoogleApiClien
 
                 destinationChanged = place;
 
-                if (mMap == null) {
-                    Log.i(TAG, "MAP is null");
-                } else {
-                    mMap.addMarker(new MarkerOptions().position(place.getLatLng()));
-                    mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(place.getLatLng(), 12.0f));
-                    Log.i(TAG, "Place: " + place.getName());
-
-                    json_response = null;
-                    try{
-                        json_response = new JSONObject(sendRequest());
-                        if(!json_response.get("status").equals("OK")){
-                            Log.e(TAG,"Error getting directions");
-                            Log.e(TAG, "Status: " + json_response.get("status"));
-                        } else {
-                            encodedPolyline = json_response.getJSONArray("routes").getJSONObject(0).getJSONObject("overview_polyline").getString("points");
-                            List<LatLng> poly = PolyUtil.decode(encodedPolyline);
-                            mMap.addPolyline(new PolylineOptions().addAll(poly));
-                        }
-                    } catch (JSONException e ){
-                        Log.e(TAG, e.getMessage());
-                    }
-
-                }
+                placeMarker(place);
 
             }
 
@@ -340,7 +255,7 @@ public class RoutingActivity extends AppCompatActivity implements GoogleApiClien
         //accessing current location
         LocationServices.FusedLocationApi.requestLocationUpdates(mGoogleApiClient, locationRequest, this);
         mMap.setMyLocationEnabled(true);
-        mMap.setPadding(0,320,0,0);
+        mMap.setPadding(0,350,0,0);
 
 
     }
@@ -371,21 +286,7 @@ public class RoutingActivity extends AppCompatActivity implements GoogleApiClien
         Log.i("Location", "Latitude: " + String.valueOf(myLatitude)
                 + "\n" + "Longitude: "+ String.valueOf(myLongitude));
 
-        json_response = null;
-
-        try{
-            json_response = new JSONObject(sendRequest());
-            if(!json_response.get("status").equals("OK")){
-                Log.e(TAG,"Error getting directions");
-                Log.e(TAG, "Status: " + json_response.get("status"));
-            } else {
-                encodedPolyline = json_response.getJSONArray("routes").getJSONObject(0).getJSONObject("overview_polyline").getString("points");
-                List<LatLng> poly = PolyUtil.decode(encodedPolyline);
-                mMap.addPolyline(new PolylineOptions().addAll(poly));
-            }
-        } catch (JSONException e ){
-            Log.e(TAG, e.getMessage());
-        }
+        sendJSON();
 
     }
 
@@ -546,15 +447,15 @@ public class RoutingActivity extends AppCompatActivity implements GoogleApiClien
             sb.append(destinationId);
         }
         if(!waypoints.isEmpty()){
-            int numWaypoints = waypoints.size() -1;
+            int numWaypoints = waypoints.size();
             int numAdded = 0;
-            sb.append("&waypoints=");
+            sb.append("&waypoints=optimize:true|");
             for(String value : waypoints.values()){
                 sb.append("place_id:");
                 sb.append(value);
-                numAdded++;
                 if(numAdded < numWaypoints)
                     sb.append("|");
+                numAdded++;
             }
         }
         sb.append("&key=");
@@ -627,6 +528,57 @@ public class RoutingActivity extends AppCompatActivity implements GoogleApiClien
 
         }
 
+    }
+
+    public void updateStopsView (){
+        StringBuilder stopNames = new StringBuilder();
+        int numWaypoints = waypoints.size();
+        int numNames = 0;
+        for(CharSequence key : waypoints.keySet()){
+            stopNames.append(key);
+            numNames++;
+            Log.i(TAG, String.valueOf(numNames));
+            Log.i(TAG, stopNames.toString());
+            if(numNames < numWaypoints){
+                stopNames.append(", ");
+            }
+        }
+        TextView currentStops = (TextView) findViewById(R.id.currentStopsText);
+        currentStops.setText(stopNames.toString());
+        currentStops.setVisibility(View.VISIBLE);
+        PlaceAutocompleteFragment autocompleteFragmentStops = (PlaceAutocompleteFragment)
+                getFragmentManager().findFragmentById(R.id.autocompleteStop);
+        autocompleteFragmentStops.setText("");
+    }
+
+    public void sendJSON(){
+        try {
+            json_response = new JSONObject(sendRequest());
+            if (!json_response.get("status").equals("OK")) {
+                Log.e(TAG, "Error getting directions");
+                Log.e(TAG, "Status: " + json_response.get("status"));
+            } else {
+                encodedPolyline = json_response.getJSONArray("routes").getJSONObject(0).getJSONObject("overview_polyline").getString("points");
+                List<LatLng> poly = PolyUtil.decode(encodedPolyline);
+                mMap.clear();
+                mMap.addPolyline(new PolylineOptions().addAll(poly));
+            }
+        } catch (JSONException e) {
+            Log.e(TAG, e.getMessage());
+        }
+
+    }
+
+    public void placeMarker(Place place){
+        if (mMap == null) {
+            Log.i(TAG, "MAP is null");
+        } else {
+            mMap.addMarker(new MarkerOptions().position(place.getLatLng()));
+            mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(place.getLatLng(), 12.0f));
+            Log.i(TAG, "Place: " + place.getName());
+
+            sendJSON();
+        }
     }
 
 }
