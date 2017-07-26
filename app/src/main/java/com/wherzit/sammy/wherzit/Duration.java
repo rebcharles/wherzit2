@@ -1,5 +1,7 @@
 package com.wherzit.sammy.wherzit;
 
+import android.util.Log;
+
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -21,7 +23,7 @@ public class Duration {
 
     public void printDuration(Duration durOBJ) {
 
-        System.out.println("Duration: \n" + "text: " + durOBJ.text + " value: " + durOBJ.value);
+        Log.i("durationTest", "Duration: \n" + "text: " + durOBJ.text + " value: " + durOBJ.value);
 
     }
 

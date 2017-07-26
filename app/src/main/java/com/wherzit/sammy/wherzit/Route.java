@@ -1,5 +1,7 @@
 package com.wherzit.sammy.wherzit;
 
+import android.util.Log;
+
 import com.google.maps.model.LatLng;
 
 import java.util.List;
@@ -23,10 +25,10 @@ public class Route {
 
         routeOBJ.distance.printDistance(routeOBJ.distance);
         routeOBJ.duration.printDuration(routeOBJ.duration);
-        System.out.println(routeOBJ.endAddress);
-        System.out.println(routeOBJ.endLocation);
-        System.out.println(routeOBJ.startAddress);
-        System.out.println(routeOBJ.startLocation);
+        Log.i("testEndAddress", routeOBJ.endAddress);
+        Log.i("testLocation",routeOBJ.endLocation.toString());
+        Log.i("testStart", routeOBJ.startAddress);
+        Log.i("testLocation", routeOBJ.startLocation.toString());
 
     }
 

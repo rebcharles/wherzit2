@@ -1,5 +1,7 @@
 package com.wherzit.sammy.wherzit;
 
+import android.util.Log;
+
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -22,7 +24,7 @@ public class Distance {
 
     public void printDistance(Distance disOBJ) {
 
-        System.out.println("Distance \n" + "text: " + disOBJ.text + " value: " + disOBJ.value);
+        Log.i("DistanceTest", "Distance \n" + "text: " + disOBJ.text + " value: " + disOBJ.value);
 
     }
 
