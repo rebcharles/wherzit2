@@ -4,6 +4,7 @@ import android.util.Log;
 
 import com.google.maps.model.LatLng;
 
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -19,6 +20,8 @@ public class Route {
     public LatLng endLocation;
     public String startAddress;
     public LatLng startLocation;
+    public String instructions;
+
 
 
     public static void printRoute(Route routeOBJ) {

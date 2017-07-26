@@ -8,6 +8,7 @@ import android.location.LocationManager;
 import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.Parcelable;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.design.widget.FloatingActionButton;
@@ -16,9 +17,11 @@ import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.FragmentManager;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
+import android.text.Html;
 import android.text.Layout;
 import android.util.Log;
 import android.view.View;
+import android.widget.Button;
 import android.widget.LinearLayout;
 import android.widget.RatingBar;
 import android.widget.TextView;
@@ -108,6 +111,18 @@ public class RoutingActivity extends AppCompatActivity implements GoogleApiClien
         SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager()
                 .findFragmentById(R.id.routingMap);
         mapFragment.getMapAsync(this);
+
+        final Button navigationButton = (Button) findViewById(R.id.navigateButton);
+        navigationButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                Intent intent = new Intent(RoutingActivity.this,DirectionsActivity.class);
+
+                intent.putExtra("jsonResponse", json_response.toString());
+
+                startActivity(intent);
+            }
+        });
 
         mGoogleApiClient = new GoogleApiClient
                 .Builder(this)
@@ -280,6 +295,8 @@ public class RoutingActivity extends AppCompatActivity implements GoogleApiClien
     @Override
     public void onLocationChanged(Location location) {
 
+
+        //fetching current location
         myLatitude = location.getLatitude();
         myLongitude = location.getLongitude();
 
@@ -496,7 +513,7 @@ public class RoutingActivity extends AppCompatActivity implements GoogleApiClien
 
             Route route= new Route();
 
-            //added details to each route
+            //adding details to each route
             JSONObject stepsOBJ = jsonSteps.getJSONObject(i);
             JSONObject jsonDistance = stepsOBJ.getJSONObject("distance");
             JSONObject jsonDuration = stepsOBJ.getJSONObject("duration");
@@ -505,28 +522,16 @@ public class RoutingActivity extends AppCompatActivity implements GoogleApiClien
 
             route.startAddress = legsOBJ.getString("start_address");
             route.endAddress = legsOBJ.getString("end_address");
-
-//                if (jsonDistance.has("maneuver")){
-//                    route.maneuver=new Maneuver(jsonDistance.getString("maneuver"));
-//                }
-
             route.distance = new Distance(jsonDistance);
             route.duration = new Duration(jsonDuration);
-            route.startLocation = new com.google.maps.model.LatLng(jsonStart.getDouble("lat"),jsonStart.getDouble("lng"));
-            route.endLocation = new com.google.maps.model.LatLng(jsonEnd.getDouble("lat"),jsonEnd.getDouble("lng"));
+            route.startLocation = new com.google.maps.model.LatLng(jsonStart.getDouble("lat"),
+                    jsonStart.getDouble("lng"));
+            route.endLocation = new com.google.maps.model.LatLng(jsonEnd.getDouble("lat"),
+                    jsonEnd.getDouble("lng"));
 
             routes.add(route);
 
-
             }
-
-        //try printing route list
-        for (int i = 0; i < routes.size(); i++) {
-            Route e = routes.get(i);
-
-            Route.printRoute(e);
-
-        }
 
     }
 
