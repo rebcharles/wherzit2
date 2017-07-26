@@ -90,7 +90,19 @@
 
     </LinearLayout>
 
-
+    <Button
+        android:id="@+id/navigateButton"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentBottom="true"
+        android:layout_alignParentEnd="true"
+        android:layout_marginBottom="16dp"
+        android:layout_marginEnd="13dp"
+        android:background="@color/common_google_signin_btn_text_dark_focused"
+        android:text="@string/navigate_button"
+        android:textColor="@color/cardview_light_background"
+        android:textSize="16sp"
+        android:typeface="sans" />
 
 
 </RelativeLayout>
