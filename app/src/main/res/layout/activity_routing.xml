@@ -53,10 +53,14 @@
             <TextView
                 android:id="@+id/currentStopsText"
                 android:layout_width="match_parent"
-                android:layout_height="30dp"
+                android:layout_height="wrap_content"
                 android:textAlignment="center"
                 android:textSize="20sp"
                 android:visibility="gone"
+                android:ellipsize="end"
+                android:scrollbars="horizontal"
+                android:scrollHorizontally="true"
+                android:maxLines="1"
                 android:hint="Add a stop"/>
         </android.support.v7.widget.CardView>
 

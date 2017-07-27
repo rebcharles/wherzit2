@@ -19,6 +19,7 @@ import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.text.Html;
 import android.text.Layout;
+import android.text.method.ScrollingMovementMethod;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
@@ -95,6 +96,7 @@ public class RoutingActivity extends AppCompatActivity implements GoogleApiClien
     String encodedPolyline;
     private JSONObject json_response;
     private HashMap<CharSequence, String> waypoints;
+    private Polyline currentRoute;
 
 
     @Override
@@ -106,6 +108,8 @@ public class RoutingActivity extends AppCompatActivity implements GoogleApiClien
         //making background transparent
         LinearLayout background = (LinearLayout) findViewById(R.id.background);
         background.setAlpha((float)0.7);
+        TextView stopsView = (TextView) findViewById(R.id.currentStopsText);
+        stopsView.setMovementMethod(new ScrollingMovementMethod());
 
         //creating map background
         SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager()
@@ -155,7 +159,10 @@ public class RoutingActivity extends AppCompatActivity implements GoogleApiClien
                                 getFragmentManager().findFragmentById(R.id.autocompleteDest);
                         destFragment.setHint(destination != null ?
                                 destination.getName() :"Choose a destination!");
-
+                        if (mMap != null){
+                            mMap.addMarker(new MarkerOptions().position(destination.getLatLng()).title(destination.getName().toString()));
+                            mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(destination.getLatLng(), 12.0f));
+                        }
                         places.release();
                     }
                 });
@@ -270,7 +277,8 @@ public class RoutingActivity extends AppCompatActivity implements GoogleApiClien
         //accessing current location
         LocationServices.FusedLocationApi.requestLocationUpdates(mGoogleApiClient, locationRequest, this);
         mMap.setMyLocationEnabled(true);
-        mMap.setPadding(0,350,0,0);
+        mMap.setPadding(0,400,0,0);
+
 
 
     }
@@ -551,6 +559,7 @@ public class RoutingActivity extends AppCompatActivity implements GoogleApiClien
         TextView currentStops = (TextView) findViewById(R.id.currentStopsText);
         currentStops.setText(stopNames.toString());
         currentStops.setVisibility(View.VISIBLE);
+        mMap.setPadding(0,450,0,0);
         PlaceAutocompleteFragment autocompleteFragmentStops = (PlaceAutocompleteFragment)
                 getFragmentManager().findFragmentById(R.id.autocompleteStop);
         autocompleteFragmentStops.setText("");
@@ -565,8 +574,9 @@ public class RoutingActivity extends AppCompatActivity implements GoogleApiClien
             } else {
                 encodedPolyline = json_response.getJSONArray("routes").getJSONObject(0).getJSONObject("overview_polyline").getString("points");
                 List<LatLng> poly = PolyUtil.decode(encodedPolyline);
-                mMap.clear();
-                mMap.addPolyline(new PolylineOptions().addAll(poly));
+                if (currentRoute != null)
+                    currentRoute.remove();
+                currentRoute = mMap.addPolyline(new PolylineOptions().addAll(poly));
             }
         } catch (JSONException e) {
             Log.e(TAG, e.getMessage());
@@ -578,11 +588,13 @@ public class RoutingActivity extends AppCompatActivity implements GoogleApiClien
         if (mMap == null) {
             Log.i(TAG, "MAP is null");
         } else {
-            mMap.addMarker(new MarkerOptions().position(place.getLatLng()));
+            sendJSON();
+
+            mMap.addMarker(new MarkerOptions().position(place.getLatLng()).title(place.getName().toString()));
             mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(place.getLatLng(), 12.0f));
             Log.i(TAG, "Place: " + place.getName());
 
-            sendJSON();
+
         }
     }
 
