@@ -26,6 +26,7 @@ import com.google.android.gms.common.api.GoogleApiClient;
 import com.google.android.gms.common.api.PendingResult;
 import com.google.android.gms.common.api.Status;
 import com.google.android.gms.location.FusedLocationProviderApi;
+import com.google.android.gms.location.FusedLocationProviderClient;
 import com.google.android.gms.location.LocationListener;
 import com.google.android.gms.location.LocationRequest;
 import com.google.android.gms.location.LocationServices;
@@ -33,6 +34,7 @@ import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.LatLng;
+import com.google.android.gms.tasks.OnSuccessListener;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -69,6 +71,7 @@ public class DirectionsActivity extends AppCompatActivity implements OnMapReadyC
     private static Location lastLocation;
     private String TAG = "coordinates";
     private static Context context;
+    private FusedLocationProviderClient fusedLocationClient;
 
 
     @Override
@@ -83,6 +86,16 @@ public class DirectionsActivity extends AppCompatActivity implements OnMapReadyC
                 .addConnectionCallbacks(this)
                 .addOnConnectionFailedListener(this)
                 .build();
+
+        googleApiClient.connect();
+
+        locationRequest = new LocationRequest();
+        locationRequest.setInterval(60 * 1000);
+        locationRequest.setFastestInterval(15 * 1000);
+        locationRequest.setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY);
+
+
+        fusedLocationClient = LocationServices.getFusedLocationProviderClient(this);
 
 
         //fetching json response and creating object
@@ -109,8 +122,6 @@ public class DirectionsActivity extends AppCompatActivity implements OnMapReadyC
             e.printStackTrace();
         }
 
-//        getCurrentLocation(context);
-
 
         //parsing data
         try {
@@ -119,25 +130,8 @@ public class DirectionsActivity extends AppCompatActivity implements OnMapReadyC
             e.printStackTrace();
         }
 
-//        Log.i("length", Integer.toString(routes.size()));
-//        Log.i("endLocation", routes.get(0).endLocation.toString());
-
-//        Location l = new DirectionsActivity().getCurrentLocation(this);
-//
-//        Log.i("please work", l.getLatitude() + " " + l.getLongitude());
-
-
-
-        try {
-            changeStep();
-        } catch (JSONException e) {
-            e.printStackTrace();
-        }
-
 
     }
-
-
 
     private List<Route> parseJsonResponse(String data) throws JSONException {
 
@@ -230,13 +224,12 @@ public class DirectionsActivity extends AppCompatActivity implements OnMapReadyC
             Double lngE = routes.get(i).endLocation.lng;
 
             //coordinates for current location
-            Double latC = userLocation.latitude;
-            Double lngC = userLocation.longitude;
+            Double latC = myLatitude;
+            Double lngC = myLongitude;
 
 
-            Log.i("coordinates", latE + " " + latC + " " + lngE + " " + lngC);
+            Log.i("coordinates_change_step", latE + " " + latC + " " + lngE + " " + lngC);
 
-            Log.i("enteredWhileLoop", userLocation.toString());
 
             if ((latE - latC) <= 0.000001) {
                 if ((lngE - lngC) <= 0.000001) {
@@ -262,12 +255,8 @@ public class DirectionsActivity extends AppCompatActivity implements OnMapReadyC
 
     }
 
-    private void requestLocationUpdates() {
-
-        locationRequest = new LocationRequest();
-        locationRequest.setInterval(60 * 1000);
-        locationRequest.setFastestInterval(15 * 1000);
-        locationRequest.setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY);
+    @Override
+    public void onConnected(@Nullable Bundle bundle) {
 
         //checking permissions
         if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION)
@@ -284,18 +273,22 @@ public class DirectionsActivity extends AppCompatActivity implements OnMapReadyC
             return;
         }
 
-        //accessing current location
-        LocationServices.FusedLocationApi.requestLocationUpdates(googleApiClient, locationRequest, this);
-//        mMap.setMyLocationEnabled(true);
-//        mMap.setPadding(0, 320, 0, 0);
 
-    }
+        fusedLocationClient.getLastLocation()
+                .addOnSuccessListener(this, new OnSuccessListener<Location>() {
+                    @Override
+                    public void onSuccess(Location location) {
+                        // Got last known location. In some rare situations this can be null.
+                        if (location != null) {
 
-    @Override
-    public void onConnected(@Nullable Bundle bundle) {
+                            myLatitude = location.getLatitude();
+                            myLongitude = location.getLongitude();
 
+                            Log.i("coordinates", String.valueOf(myLatitude + " " + myLongitude));
 
-        requestLocationUpdates();
+                        }
+                    }
+                });
 
     }
 
@@ -307,8 +300,12 @@ public class DirectionsActivity extends AppCompatActivity implements OnMapReadyC
         myLatitude = location.getLatitude();
         myLongitude = location.getLongitude();
 
-        userLocation = new LatLng(myLatitude, myLongitude);
 
+        try {
+            changeStep();
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
 
     }
 //
@@ -334,13 +331,6 @@ public class DirectionsActivity extends AppCompatActivity implements OnMapReadyC
     protected void onResume() {
         super.onResume();
 
-        if (permissionIsGranted) {
-
-            if (googleApiClient.isConnected()) {
-
-                requestLocationUpdates();
-            }
-        }
     }
 
     @Override
