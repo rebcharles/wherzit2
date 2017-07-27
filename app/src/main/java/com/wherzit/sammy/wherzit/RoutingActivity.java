@@ -1,6 +1,7 @@
 package com.wherzit.sammy.wherzit;
 
 import android.Manifest;
+import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.location.Location;
@@ -96,6 +97,7 @@ public class RoutingActivity extends AppCompatActivity implements GoogleApiClien
     String encodedPolyline;
     private JSONObject json_response;
     private HashMap<CharSequence, String> waypoints;
+    LatLng currentLocation;
     private Polyline currentRoute;
 
 
@@ -120,10 +122,16 @@ public class RoutingActivity extends AppCompatActivity implements GoogleApiClien
         navigationButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                Intent intent = new Intent(RoutingActivity.this,DirectionsActivity.class);
+                Intent intent = new Intent(RoutingActivity.this, DirectionsActivity.class);
 
-                intent.putExtra("jsonResponse", json_response.toString());
+                if(json_response == null) {
 
+                    Log.i("null","json is NULL");
+                }
+
+                if (json_response != null) {
+                    intent.putExtra("jsonResponse", json_response.toString());
+                }
                 startActivity(intent);
             }
         });
@@ -197,7 +205,7 @@ public class RoutingActivity extends AppCompatActivity implements GoogleApiClien
 
 
         PlaceAutocompleteFragment stopFragment = (PlaceAutocompleteFragment)
-            getFragmentManager().findFragmentById(R.id.autocompleteStop);
+                getFragmentManager().findFragmentById(R.id.autocompleteStop);
         stopFragment.setHint("Add a stop");
 
 
@@ -245,7 +253,12 @@ public class RoutingActivity extends AppCompatActivity implements GoogleApiClien
                 Log.i(TAG, "An error occurred: " + status);
             }
 
+
+
+
         });
+
+        sendJSON();
 
 
     }
@@ -293,7 +306,7 @@ public class RoutingActivity extends AppCompatActivity implements GoogleApiClien
     @Override
     public void onConnectionFailed(@NonNull ConnectionResult connectionResult) {
 
-        if(!connectionResult.isSuccess()) {
+        if (!connectionResult.isSuccess()) {
             Toast.makeText(this, "Unable to connect to Google", Toast.LENGTH_SHORT).show();
         }
 
@@ -445,11 +458,6 @@ public class RoutingActivity extends AppCompatActivity implements GoogleApiClien
         protected void onPostExecute(String result) {
 
             super.onPostExecute(result);
-            try {
-                parseJsonResponse(json_response.toString());
-            } catch (JSONException e) {
-                e.printStackTrace();
-            }
         }
     }
     public String sendRequest() {
@@ -501,48 +509,6 @@ public class RoutingActivity extends AppCompatActivity implements GoogleApiClien
     }
 
 
-
-    private void parseJsonResponse(String data) throws JSONException {
-
-        if (data == null) { return;}
-
-
-        List<Route> routes=new ArrayList<Route>();
-
-        //organizing json response into variables and objects
-        JSONObject directions = new JSONObject(data);
-        JSONArray jsonRoutes = directions.getJSONArray("routes");
-        JSONObject routesOBJ = jsonRoutes.getJSONObject(0);
-        JSONArray jsonLegs= routesOBJ.getJSONArray("legs");
-        JSONObject legsOBJ = jsonLegs.getJSONObject(0);
-        JSONArray jsonSteps = legsOBJ.getJSONArray("steps");
-
-        for (int i = 0; i < jsonSteps.length(); i++) {
-
-            Route route= new Route();
-
-            //adding details to each route
-            JSONObject stepsOBJ = jsonSteps.getJSONObject(i);
-            JSONObject jsonDistance = stepsOBJ.getJSONObject("distance");
-            JSONObject jsonDuration = stepsOBJ.getJSONObject("duration");
-            JSONObject jsonEnd = stepsOBJ.getJSONObject("end_location");
-            JSONObject jsonStart = stepsOBJ.getJSONObject("start_location");
-
-            route.startAddress = legsOBJ.getString("start_address");
-            route.endAddress = legsOBJ.getString("end_address");
-            route.distance = new Distance(jsonDistance);
-            route.duration = new Duration(jsonDuration);
-            route.startLocation = new com.google.maps.model.LatLng(jsonStart.getDouble("lat"),
-                    jsonStart.getDouble("lng"));
-            route.endLocation = new com.google.maps.model.LatLng(jsonEnd.getDouble("lat"),
-                    jsonEnd.getDouble("lng"));
-
-            routes.add(route);
-
-            }
-
-    }
-
     public void updateStopsView (){
         StringBuilder stopNames = new StringBuilder();
         int numWaypoints = waypoints.size();
@@ -572,7 +538,8 @@ public class RoutingActivity extends AppCompatActivity implements GoogleApiClien
                 Log.e(TAG, "Error getting directions");
                 Log.e(TAG, "Status: " + json_response.get("status"));
             } else {
-                encodedPolyline = json_response.getJSONArray("routes").getJSONObject(0).getJSONObject("overview_polyline").getString("points");
+                encodedPolyline = json_response.getJSONArray("routes").getJSONObject(0)
+                        .getJSONObject("overview_polyline").getString("points");
                 List<LatLng> poly = PolyUtil.decode(encodedPolyline);
                 if (currentRoute != null)
                     currentRoute.remove();
@@ -599,3 +566,4 @@ public class RoutingActivity extends AppCompatActivity implements GoogleApiClien
     }
 
 }
+
