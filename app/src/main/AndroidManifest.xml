@@ -46,6 +46,10 @@
             android:theme="@style/AppTheme.NoActionBar" />
         <activity android:name=".DirectionsActivity" />
 
+        <service
+            android:name=".LocationService"
+            android:enabled="true"
+            android:exported="false"></service>
     </application>
 
 </manifest>

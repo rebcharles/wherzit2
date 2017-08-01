@@ -66,6 +66,29 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.O
     private boolean permissionIsGranted = false;
     protected Place selectedPlace;
 
+    /*
+
+    private String VIEW = "Routing";
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        switch (VIEW) {
+            case "Searching":
+                //switch to Searching Activity
+                //setIntent for all data that Searching Activity needs
+            case "Routing":
+                //switch to Routing Activity
+                //setIntent for all data that Routing Activity needs
+                setIntent(
+            case "Directions:
+                //* *
+
+        }
+    }
+
+
+     */
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {

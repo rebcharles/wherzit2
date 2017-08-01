@@ -1,6 +1,7 @@
 package com.wherzit.sammy.wherzit;
 
 import android.Manifest;
+import android.app.Service;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
@@ -9,6 +10,7 @@ import android.location.LocationManager;
 import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.IBinder;
 import android.os.Parcelable;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
@@ -31,6 +33,7 @@ import android.widget.Toast;
 
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.api.GoogleApiClient;
+import com.google.android.gms.common.api.PendingResult;
 import com.google.android.gms.common.api.ResultCallback;
 import com.google.android.gms.common.api.Status;
 import com.google.android.gms.location.FusedLocationProviderApi;
@@ -103,6 +106,9 @@ public class RoutingActivity extends AppCompatActivity implements GoogleApiClien
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+
+        Log.i(TAG, "============ onCreate ============");
+
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_routing);
         waypoints = new HashMap<CharSequence, String>();
@@ -117,6 +123,24 @@ public class RoutingActivity extends AppCompatActivity implements GoogleApiClien
         SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager()
                 .findFragmentById(R.id.routingMap);
         mapFragment.getMapAsync(this);
+
+
+
+        mGoogleApiClient = new GoogleApiClient
+                .Builder(this)
+                .addApi(Places.GEO_DATA_API)
+                .addApi(Places.PLACE_DETECTION_API)
+                .addApi(LocationServices.API)
+                .addConnectionCallbacks(this)
+                .addOnConnectionFailedListener(this)
+                .enableAutoManage(this, this)
+                .build();
+        locationRequest = new LocationRequest();
+        locationRequest.setInterval(60 * 1000);
+        locationRequest.setFastestInterval(10000);
+        locationRequest.setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY);
+
+        destinationId = getIntent().getExtras().getString("destinationId");
 
         final Button navigationButton = (Button) findViewById(R.id.navigateButton);
         navigationButton.setOnClickListener(new View.OnClickListener() {
@@ -135,22 +159,6 @@ public class RoutingActivity extends AppCompatActivity implements GoogleApiClien
                 startActivity(intent);
             }
         });
-
-        mGoogleApiClient = new GoogleApiClient
-                .Builder(this)
-                .addApi(Places.GEO_DATA_API)
-                .addApi(Places.PLACE_DETECTION_API)
-                .addApi(LocationServices.API)
-                .addConnectionCallbacks(this)
-                .addOnConnectionFailedListener(this)
-                .enableAutoManage(this, this)
-                .build();
-        locationRequest = new LocationRequest();
-        locationRequest.setInterval(60 * 1000);
-        locationRequest.setFastestInterval(15 * 1000);
-        locationRequest.setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY);
-
-        destinationId = getIntent().getExtras().getString("destinationId");
 
         Places.GeoDataApi.getPlaceById(mGoogleApiClient, destinationId)
                 .setResultCallback(new ResultCallback<PlaceBuffer>() {
@@ -180,7 +188,7 @@ public class RoutingActivity extends AppCompatActivity implements GoogleApiClien
                 getFragmentManager().findFragmentById(R.id.autocompleteOrigin);
         originFragment.setHint("Current location");
 
-        LatLng locationOrigin= new LatLng (myLatitude,myLongitude);
+        LatLng locationOrigin= new LatLng (myLatitude, myLongitude);
 
         Log.i("locationOrigin", locationOrigin.toString());
 
@@ -189,6 +197,8 @@ public class RoutingActivity extends AppCompatActivity implements GoogleApiClien
 
             @Override
             public void onPlaceSelected(Place place) {
+
+                    Log.i(TAG, " =========== 196:onPlaceSelected ========= ");
 
                     origin = place;
 
@@ -218,6 +228,9 @@ public class RoutingActivity extends AppCompatActivity implements GoogleApiClien
         stopFragment.setOnPlaceSelectedListener(new PlaceSelectionListener() {
             @Override
             public void onPlaceSelected(Place place) {
+
+                Log.i(TAG, " =========== 227:onPlaceSelected ========= ");
+
                 waypoints.put(place.getName(),place.getId());
                 Log.i(TAG,String.valueOf(waypoints.size()));
                 updateStopsView();
@@ -243,7 +256,7 @@ public class RoutingActivity extends AppCompatActivity implements GoogleApiClien
 
             @Override
             public void onPlaceSelected(Place place) {
-
+                Log.i(TAG, " =========== 254: onPlaceSelected ========= ");
                 destinationChanged = place;
 
                 placeMarker(place);
@@ -260,19 +273,45 @@ public class RoutingActivity extends AppCompatActivity implements GoogleApiClien
 
         });
 
-        sendJSON();
+
+//        sendJSON();
 
 
     }
 
     @Override
     public void onConnected(@Nullable Bundle bundle) {
+        Log.i(TAG, " =========== onConnected ========= ");
 
-        requestLocationUpdates();
+        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION)
+                != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this,
+                Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
 
+            //asking users permission to access location
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+
+                requestPermissions(new String[] {Manifest.permission.ACCESS_FINE_LOCATION}, 1);
+
+            }
+
+            return;
+        }
+
+        Location location = LocationServices.FusedLocationApi.getLastLocation(mGoogleApiClient);
+        if (location == null) {
+            requestLocationUpdates();
+        }
+        else {
+            myLatitude = location.getLatitude();
+            myLongitude = location.getLongitude();
+            Log.i(TAG, "Location : " + String.valueOf(myLatitude) + String.valueOf(myLongitude));
+            sendJSON();
+        }
     }
 
     private void requestLocationUpdates() {
+
+        Log.i(TAG, " =========== onLocationUpdates ========= ");
 
         //checking permissions
         if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION)
@@ -290,7 +329,9 @@ public class RoutingActivity extends AppCompatActivity implements GoogleApiClien
         }
 
         //accessing current location
+        Log.i(TAG, "======== Before requestLocationUpdates =========");
         LocationServices.FusedLocationApi.requestLocationUpdates(mGoogleApiClient, locationRequest, this);
+        Log.i(TAG, "======== After requestLocationUpdates =========");
         mMap.setMyLocationEnabled(true);
         mMap.setPadding(0,400,0,0);
 
@@ -318,13 +359,12 @@ public class RoutingActivity extends AppCompatActivity implements GoogleApiClien
     @Override
     public void onLocationChanged(Location location) {
 
+        Log.i(TAG, "============ onLocationChanged ============");
 
         //fetching current location
-        myLatitude = location.getLatitude();
-        myLongitude = location.getLongitude();
 
-        Log.i("Location", "Latitude: " + String.valueOf(myLatitude)
-                + "\n" + "Longitude: "+ String.valueOf(myLongitude));
+        Log.i("Location", "Latitude: " + String.valueOf(location.getLatitude())
+                + "\n" + "Longitude: "+ String.valueOf(location.getLongitude()));
 
         sendJSON();
 
@@ -332,15 +372,21 @@ public class RoutingActivity extends AppCompatActivity implements GoogleApiClien
 
     @Override
     protected void onStart() {
+
+        Log.i(TAG, " =========== onStart ========= ");
+
         super.onStart();
         mGoogleApiClient.connect();
     }
 
     @Override
     protected void onResume() {
+
+        Log.i(TAG, " =========== onResume ========= ");
+
         super.onResume();
 
-        if(permissionIsGranted) {
+       if(permissionIsGranted) {
 
             if (mGoogleApiClient.isConnected()) {
 
@@ -351,17 +397,23 @@ public class RoutingActivity extends AppCompatActivity implements GoogleApiClien
 
     @Override
     protected void onPause() {
+
+        Log.i(TAG, " =========== onPause ========= ");
+
         super.onPause();
 
-        if(permissionIsGranted) {
+//        if(permissionIsGranted) {
 
             //pausing the location service while application is not in use
             LocationServices.FusedLocationApi.removeLocationUpdates(mGoogleApiClient, this);
-        }
+//        }
     }
 
     @Override
     protected void onStop() {
+
+        Log.i(TAG, " =========== onStop ========= ");
+
         super.onStop();
 
         if(permissionIsGranted) {
@@ -372,6 +424,9 @@ public class RoutingActivity extends AppCompatActivity implements GoogleApiClien
     @Override
     public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions,
                                            @NonNull int[] grantResults) {
+
+        Log.i(TAG, "============ onRequestPermissionsResult ============");
+
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
 
         switch (requestCode) {
@@ -399,9 +454,11 @@ public class RoutingActivity extends AppCompatActivity implements GoogleApiClien
 
     @Override
     public void onMapReady(GoogleMap googleMap) {
+        Log.i(TAG, " =========== onMapReady ========= ");
         mMap = googleMap;
 
     }
+
 
     public class  HTTPGetRequest  extends AsyncTask<String, Void, String> {
 
@@ -411,6 +468,7 @@ public class RoutingActivity extends AppCompatActivity implements GoogleApiClien
 
         @Override
         protected String doInBackground(String... params) {
+            Log.i(TAG, " =========== doInBackground ========= ");
             String stringUrl = params[0];
             String result = "";
             String inputLine;
@@ -458,11 +516,14 @@ public class RoutingActivity extends AppCompatActivity implements GoogleApiClien
 
         @Override
         protected void onPostExecute(String result) {
-
+            Log.i(TAG, " =========== onPostExecute ========= ");
             super.onPostExecute(result);
         }
     }
     public String sendRequest() {
+
+        Log.i(TAG, " =========== sendRequest ========= ");
+
         StringBuilder sb = new StringBuilder("https://maps.googleapis.com/maps/api/directions/json?");
         sb.append("origin=");
         if (origin != null) {
@@ -512,6 +573,7 @@ public class RoutingActivity extends AppCompatActivity implements GoogleApiClien
 
 
     public void updateStopsView (){
+        Log.i(TAG, " =========== updateStopsView ========= ");
         StringBuilder stopNames = new StringBuilder();
         int numWaypoints = waypoints.size();
         int numNames = 0;
@@ -534,6 +596,9 @@ public class RoutingActivity extends AppCompatActivity implements GoogleApiClien
     }
 
     public void sendJSON(){
+
+        Log.i(TAG, " =========== sendJSON ========= ");
+
         try {
             json_response = new JSONObject(sendRequest());
             if (!json_response.get("status").equals("OK")) {
@@ -554,6 +619,7 @@ public class RoutingActivity extends AppCompatActivity implements GoogleApiClien
     }
 
     public void placeMarker(Place place){
+        Log.i(TAG, " =========== sendMarker ========= ");
         if (mMap == null) {
             Log.i(TAG, "MAP is null");
         } else {
