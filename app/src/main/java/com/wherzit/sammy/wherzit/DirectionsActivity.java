@@ -107,6 +107,9 @@ public class DirectionsActivity extends AppCompatActivity implements OnMapReadyC
     private String[] destinationChangedLatLng;
     double dCLng;
     double dCLat;
+    TextView textViewToChange;
+    String instructions;
+    List<Route> routes;
 
 
     @Override
@@ -142,6 +145,8 @@ public class DirectionsActivity extends AppCompatActivity implements OnMapReadyC
         String jsonString = extras.getString("jsonResponse");
         origin = extras.getString("origin");
 
+        textViewToChange = (TextView) findViewById(R.id.directions);
+
 
         if (origin == null) {
             Log.i("origin", "null");
@@ -168,6 +173,81 @@ public class DirectionsActivity extends AppCompatActivity implements OnMapReadyC
             e.printStackTrace();
         }
 
+        //parsing data
+        try {
+            routes = parseJsonResponse(jsonString);
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+
+
+    }
+
+    protected void setText(int i) throws JSONException {
+
+        //getting ith step
+        JSONObject jsonOBJ = jsonResponse.getJSONArray("routes").getJSONObject(0)
+                .getJSONArray("legs").getJSONObject(0).getJSONArray("steps").getJSONObject(i);
+
+        Log.i("jsonStepArray",jsonResponse.getJSONArray("routes").getJSONObject(0)
+                .getJSONArray("legs").getJSONObject(0).getJSONArray("steps").toString());
+
+
+        if (jsonOBJ.has("maneuver")) {
+
+            String Maneuver = jsonOBJ.getString("maneuver");
+
+            textViewToChange.setText(Maneuver + " in " + jsonOBJ.getJSONObject("distance").getString("text"));
+
+        } else {
+
+
+            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.N) {
+
+                Log.i("jsonObj", jsonOBJ.getString("html_instructions"));
+
+                instructions = Html.fromHtml(jsonOBJ.getString("html_instructions"),
+                        Html.FROM_HTML_MODE_LEGACY).toString();
+
+                Log.i("instructions", instructions);
+
+
+            } else {
+
+                instructions = Html.fromHtml(jsonOBJ.getString("html_instructions")).toString();
+
+
+            }
+            textViewToChange.setText(instructions);
+
+        }
+    }
+
+    protected void changeStep() throws JSONException {
+
+        int i = 0;
+        while (i < routes.size()) {
+
+            //coordinates for end location
+            Double latEndLoc = routes.get(i).endLocation.lat;
+            Double lngEndLoc = routes.get(i).endLocation.lng;
+
+
+
+
+            if ((latEndLoc - myLatitude) <= 0.000001) {
+                if ((lngEndLoc - myLongitude) <= 0.000001) {
+
+                    Log.i("enteredIfStatement", "finally");
+                    setText(i + 1);
+                    return;
+
+                }
+
+            }
+            i++;
+        }
+        return;
 
     }
 
@@ -239,6 +319,11 @@ public class DirectionsActivity extends AppCompatActivity implements OnMapReadyC
         myLongitude = location.getLongitude();
 
         currentLocation = new LatLng(myLatitude, myLongitude);
+        try {
+            setText(0);
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
 
         Log.i("Location", "Latitude: " + String.valueOf(location.getLatitude())
                 + "\n" + "Longitude: " + String.valueOf(location.getLongitude()));
@@ -304,6 +389,12 @@ public class DirectionsActivity extends AppCompatActivity implements OnMapReadyC
 
         Log.i("Location", "Latitude: " + String.valueOf(location.getLatitude())
                 + "\n" + "Longitude: " + String.valueOf(location.getLongitude()));
+
+        try {
+            changeStep();
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
 
     }
 
@@ -403,6 +494,49 @@ public class DirectionsActivity extends AppCompatActivity implements OnMapReadyC
                 break;
 
         }
+    }
+
+    private List<Route> parseJsonResponse(String data) throws JSONException {
+
+        if (data == null) {
+            return null;
+        }
+
+
+        List<Route> routes = new ArrayList<Route>();
+
+
+        //organizing json response into variables and objects
+        JSONObject directions = new JSONObject(data);
+        JSONArray jsonRoutes = directions.getJSONArray("routes");
+        JSONObject routesOBJ = jsonRoutes.getJSONObject(0);
+        JSONArray jsonLegs = routesOBJ.getJSONArray("legs");
+        JSONObject legsOBJ = jsonLegs.getJSONObject(0);
+        JSONArray jsonSteps = legsOBJ.getJSONArray("steps");
+
+        for (int i = 0; i < jsonSteps.length(); i++) {
+
+            Route route = new Route();
+
+            //adding details to each route
+            JSONObject stepsOBJ = jsonSteps.getJSONObject(i);
+            JSONObject jsonDistance = stepsOBJ.getJSONObject("distance");
+            JSONObject jsonDuration = stepsOBJ.getJSONObject("duration");
+            JSONObject jsonEnd = stepsOBJ.getJSONObject("end_location");
+            JSONObject jsonStart = stepsOBJ.getJSONObject("start_location");
+
+            route.startAddress = legsOBJ.getString("start_address");
+            route.endAddress = legsOBJ.getString("end_address");
+            route.distance = new Distance(jsonDistance);
+            route.duration = new Duration(jsonDuration);
+            route.startLocation = new com.google.maps.model.LatLng(jsonStart.getDouble("lat"),
+                    jsonStart.getDouble("lng"));
+            route.endLocation = new com.google.maps.model.LatLng(jsonEnd.getDouble("lat"),
+                    jsonEnd.getDouble("lng"));
+
+            routes.add(route);
+        }
+        return routes;
     }
 
 }

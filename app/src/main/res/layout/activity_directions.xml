@@ -7,10 +7,11 @@
         android:id="@+id/directions"
         android:layout_width="match_parent"
         android:layout_height="103dp"
-        android:textColor="@color/common_google_signin_btn_text_light_pressed"
-        android:typeface="normal"
+        android:gravity="center"
         android:orientation="vertical"
-        android:gravity="center"/>
+        android:textColor="@color/common_google_signin_btn_text_light_pressed"
+        android:textSize="20sp"
+        android:typeface="normal" />
 
     <fragment
         android:id="@+id/mapDirectionsActivity"
