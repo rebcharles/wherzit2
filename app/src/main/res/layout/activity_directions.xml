@@ -3,6 +3,15 @@
     android:orientation="vertical" android:layout_width="match_parent"
     android:layout_height="match_parent">
 
+    <TextView
+        android:id="@+id/directions"
+        android:layout_width="match_parent"
+        android:layout_height="103dp"
+        android:textColor="@color/common_google_signin_btn_text_light_pressed"
+        android:typeface="normal"
+        android:orientation="vertical"
+        android:gravity="center"/>
+
     <fragment
         android:id="@+id/mapDirectionsActivity"
         android:name="com.google.android.gms.maps.MapFragment"

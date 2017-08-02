@@ -76,8 +76,6 @@ import java.util.concurrent.ExecutionException;
 
 import javax.net.ssl.HttpsURLConnection;
 
-import static android.webkit.ConsoleMessage.MessageLevel.LOG;
-import static com.wherzit.sammy.wherzit.R.string.google_maps_key;
 
 public class RoutingActivity extends AppCompatActivity implements GoogleApiClient.OnConnectionFailedListener,
         GoogleApiClient.ConnectionCallbacks, LocationListener, OnMapReadyCallback {
@@ -124,6 +122,9 @@ public class RoutingActivity extends AppCompatActivity implements GoogleApiClien
                 .findFragmentById(R.id.routingMap);
         mapFragment.getMapAsync(this);
 
+        Log.i(TAG, "======== After getMapAsync =========");
+
+
 
 
         mGoogleApiClient = new GoogleApiClient
@@ -154,7 +155,23 @@ public class RoutingActivity extends AppCompatActivity implements GoogleApiClien
                 }
 
                 if (json_response != null) {
-                    intent.putExtra("jsonResponse", json_response.toString());
+                    Bundle extras = new Bundle();
+                    extras.putString("jsonResponse", json_response.toString());
+
+                    if (origin != null) {
+                        extras.putString("origin",origin.getLatLng().toString());
+                    }
+
+
+                    if(destinationChanged != null) {
+                        extras.putString("destinationID",destinationChanged.getLatLng().toString());
+                    }
+
+                    else {
+                        extras.putString("destinationID",destinationId);
+                    }
+
+                    intent.putExtras(extras);
                 }
                 startActivity(intent);
             }
@@ -298,16 +315,14 @@ public class RoutingActivity extends AppCompatActivity implements GoogleApiClien
         }
 
         Location location = LocationServices.FusedLocationApi.getLastLocation(mGoogleApiClient);
-        if (location == null) {
-            requestLocationUpdates();
-        }
-        else {
-            myLatitude = location.getLatitude();
-            myLongitude = location.getLongitude();
-            Log.i(TAG, "Location : " + String.valueOf(myLatitude) + String.valueOf(myLongitude));
-            sendJSON();
-        }
+        requestLocationUpdates();
+        myLatitude = location.getLatitude();
+        myLongitude = location.getLongitude();
+        Log.i(TAG, "Location : " + String.valueOf(myLatitude) + String.valueOf(myLongitude));
+        sendJSON();
+
     }
+
 
     private void requestLocationUpdates() {
 
@@ -478,6 +493,8 @@ public class RoutingActivity extends AppCompatActivity implements GoogleApiClien
                 //Create a URL object holding our url
                 URL myUrl = new URL(stringUrl);
 
+                Log.i("url", stringUrl);
+
                 //Create a connection
                 HttpsURLConnection connection =(HttpsURLConnection)
                         myUrl.openConnection();
@@ -527,6 +544,7 @@ public class RoutingActivity extends AppCompatActivity implements GoogleApiClien
         StringBuilder sb = new StringBuilder("https://maps.googleapis.com/maps/api/directions/json?");
         sb.append("origin=");
         if (origin != null) {
+            Log.i(TAG + " origin", origin.toString());
             sb.append(origin.getLatLng().latitude);
             sb.append(",");
             sb.append(origin.getLatLng().longitude);
@@ -538,11 +556,14 @@ public class RoutingActivity extends AppCompatActivity implements GoogleApiClien
         sb.append("&destination=");
         if (destinationChanged != null) {
             sb.append(destinationChanged.getLatLng());
+            Log.i(TAG + " desChan", destinationChanged.toString());
         } else {
             sb.append("place_id:");
             sb.append(destinationId);
+            Log.i(TAG + " desID", destinationId);
         }
         if(!waypoints.isEmpty()){
+            Log.i(TAG + " waypoi", waypoints.toString());
             int numWaypoints = waypoints.size();
             int numAdded = 0;
             sb.append("&waypoints=optimize:true|");

@@ -46,8 +46,10 @@ import com.google.android.gms.location.LocationSettingsResult;
 import com.google.android.gms.location.LocationSettingsStates;
 import com.google.android.gms.location.LocationSettingsStatusCodes;
 import com.google.android.gms.location.SettingsClient;
+import com.google.android.gms.location.places.Place;
 import com.google.android.gms.location.places.Places;
 import com.google.android.gms.maps.GoogleMap;
+import com.google.android.gms.maps.MapFragment;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.LatLng;
@@ -61,12 +63,20 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.io.BufferedReader;
 import java.io.FileDescriptor;
+import java.io.IOException;
+import java.io.InputStreamReader;
 import java.io.PrintWriter;
+import java.lang.reflect.Field;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
+
+import javax.net.ssl.HttpsURLConnection;
 
 //
 ///**
@@ -85,6 +95,18 @@ public class DirectionsActivity extends AppCompatActivity implements OnMapReadyC
     private boolean permissionIsGranted = false;
     private FusedLocationProviderClient mFusedLocationClient;
     private LocationCallback mLocationCallback;
+    private LatLng currentLocation;
+    private JSONObject jsonResponse;
+    private String destinationId;
+    private String destinationChanged;
+    private String waypoints;
+    private String origin;
+    private String[] originLatLng;
+    private double originLongitude;
+    private double originLatitude;
+    private String[] destinationChangedLatLng;
+    double dCLng;
+    double dCLat;
 
 
     @Override
@@ -96,12 +118,68 @@ public class DirectionsActivity extends AppCompatActivity implements OnMapReadyC
         setContentView(R.layout.activity_directions);
 
         //creating map background
-        SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager()
-                .findFragmentById(R.id.mapDirectionsActivity);
+        MapFragment mapFragment = (MapFragment) getFragmentManager().findFragmentById(R.id.mapDirectionsActivity);
+        mapFragment.getMapAsync(this);
+
+        buildClient();
 
         //fetching json response and creating object
-        Intent intent = getIntent();
-        String jsonString = intent.getStringExtra("jsonResponse");
+
+        Bundle extras = getIntent().getExtras();
+        destinationId = extras.getString("destinationID");
+
+        if (destinationId != null) {
+            Log.i("destinationID", destinationId);
+        }
+
+        destinationChanged = extras.getString("destinationChanged");
+        if (destinationChanged != null) {
+            Log.i("destinationChanged", destinationChanged);
+            double dCLat = Double.parseDouble(destinationChangedLatLng[0]);
+            double dCLng = Double.parseDouble(destinationChangedLatLng[1]);
+        }
+
+        String jsonString = extras.getString("jsonResponse");
+        origin = extras.getString("origin");
+
+
+        if (origin == null) {
+            Log.i("origin", "null");
+        } else {
+            Log.i("origin", origin.toString());
+            String[] originLatLng = origin.split(",");
+            double originLatitude = Double.parseDouble(originLatLng[0]);
+            double originLongitude = Double.parseDouble(originLatLng[1]);
+
+        }
+
+        try {
+            jsonResponse = new JSONObject(jsonString);
+
+            //getting origin and destination
+            String startAddress = jsonResponse.getJSONArray("routes").getJSONObject(0)
+                    .getJSONArray("legs").getJSONObject(0).getString("start_address");
+
+            String endAddress = jsonResponse.getJSONArray("routes").getJSONObject(0)
+                    .getJSONArray("legs").getJSONObject(0).getString("end_address");
+
+
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+
+
+    }
+
+    @Override
+    public void onMapReady(GoogleMap googleMap) {
+        Log.i(TAG, " =========== onMapReady ========= ");
+        mMap = googleMap;
+
+    }
+
+    private void buildClient() {
+        Log.i(TAG, " =========== buildClient ========= ");
 
         mGoogleApiClient = new GoogleApiClient
                 .Builder(this)
@@ -110,7 +188,7 @@ public class DirectionsActivity extends AppCompatActivity implements OnMapReadyC
                 .addOnConnectionFailedListener(this)
                 .build();
 
-        //taking information about location from other providers
+        //setting interval for updating location service
         locationRequest = new LocationRequest();
         locationRequest.setInterval(20000);
         locationRequest.setFastestInterval(10000);
@@ -126,14 +204,6 @@ public class DirectionsActivity extends AppCompatActivity implements OnMapReadyC
                 requestLocationUpdates();
             }
         };
-
-    }
-
-    @Override
-    public void onMapReady(GoogleMap googleMap) {
-        Log.i(TAG, " =========== onMapReady ========= ");
-        mMap = googleMap;
-
     }
 
     @Override
@@ -152,7 +222,7 @@ public class DirectionsActivity extends AppCompatActivity implements OnMapReadyC
 
                 Log.i(TAG, " =========== 2nd ========= ");
 
-                requestPermissions(new String[] {Manifest.permission.ACCESS_FINE_LOCATION}, 1);
+                requestPermissions(new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, 1);
 
             }
 
@@ -160,23 +230,22 @@ public class DirectionsActivity extends AppCompatActivity implements OnMapReadyC
         }
 
         Log.i(TAG, " =========== 3rd ========= ");
+
+        //setting location to last known location
         Location location = LocationServices.FusedLocationApi.getLastLocation(mGoogleApiClient);
+        requestLocationUpdates();
 
-        if (location == null) {
-            Log.i(TAG, " =========== 4th ========= ");
-            requestLocationUpdates();
+        myLatitude = location.getLatitude();
+        myLongitude = location.getLongitude();
 
-        } else {
-            myLatitude = location.getLatitude();
-            myLongitude = location.getLongitude();
+        currentLocation = new LatLng(myLatitude, myLongitude);
 
-            Log.i("Location", "Latitude: " + String.valueOf(location.getLatitude())
-                    + "\n" + "Longitude: "+ String.valueOf(location.getLongitude()));
+        Log.i("Location", "Latitude: " + String.valueOf(location.getLatitude())
+                + "\n" + "Longitude: " + String.valueOf(location.getLongitude()));
 
-
-
-        }
+        Log.i("currentLocation", currentLocation.toString());
     }
+
 
     private void requestLocationUpdates() {
 
@@ -191,16 +260,19 @@ public class DirectionsActivity extends AppCompatActivity implements OnMapReadyC
             //asking users permission to access location
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
 
-                requestPermissions(new String[] {Manifest.permission.ACCESS_FINE_LOCATION}, 1);
+                requestPermissions(new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, 1);
 
             }
 
             return;
         }
         Log.i(TAG, "======== Before requestLocationUpdates =========");
+        //requesting updates
         LocationServices.FusedLocationApi.requestLocationUpdates(mGoogleApiClient, locationRequest, this);
         Log.i(TAG, "======== After requestLocationUpdates =========");
-//        mMap.setMyLocationEnabled(true);
+        // current location button
+        mMap.setMyLocationEnabled(true);
+        Log.i(TAG, "======== setLocationEnabled =========");
     }
 
     @Override
@@ -231,7 +303,7 @@ public class DirectionsActivity extends AppCompatActivity implements OnMapReadyC
         myLongitude = location.getLongitude();
 
         Log.i("Location", "Latitude: " + String.valueOf(location.getLatitude())
-                + "\n" + "Longitude: "+ String.valueOf(location.getLongitude()));
+                + "\n" + "Longitude: " + String.valueOf(location.getLongitude()));
 
     }
 
@@ -254,15 +326,7 @@ public class DirectionsActivity extends AppCompatActivity implements OnMapReadyC
 
         Log.i(TAG, " =========== onResume ========= ");
         super.onResume();
-
-
-        if(permissionIsGranted && checkPlayServices()) {
-
-            if (mGoogleApiClient.isConnected()) {
-
-                requestLocationUpdates();
-            }
-        }
+        checkPlayServices();
 
     }
 
@@ -270,21 +334,21 @@ public class DirectionsActivity extends AppCompatActivity implements OnMapReadyC
 
         Log.i(TAG, " =========== checkPlayServices ========= ");
 
-            int resultCode = GooglePlayServicesUtil
-                    .isGooglePlayServicesAvailable(this);
-            if (resultCode != ConnectionResult.SUCCESS) {
-                if (GooglePlayServicesUtil.isUserRecoverableError(resultCode)) {
-                    GooglePlayServicesUtil.getErrorDialog(resultCode, this,
-                            PLAY_SERVICES_RESOLUTION_REQUEST).show();
-                } else {
-                    Toast.makeText(getApplicationContext(),
-                            "This device is not supported.", Toast.LENGTH_LONG)
-                            .show();
-                    finish();
-                }
-                return false;
+        int resultCode = GooglePlayServicesUtil
+                .isGooglePlayServicesAvailable(this);
+        if (resultCode != ConnectionResult.SUCCESS) {
+            if (GooglePlayServicesUtil.isUserRecoverableError(resultCode)) {
+                GooglePlayServicesUtil.getErrorDialog(resultCode, this,
+                        PLAY_SERVICES_RESOLUTION_REQUEST).show();
+            } else {
+                Toast.makeText(getApplicationContext(),
+                        "This device is not supported.", Toast.LENGTH_LONG)
+                        .show();
+                finish();
             }
-            return true;
+            return false;
+        }
+        return true;
     }
 
     @Override
@@ -292,7 +356,7 @@ public class DirectionsActivity extends AppCompatActivity implements OnMapReadyC
 
         Log.i(TAG, " =========== onPause ========= ");
         super.onPause();
-        LocationServices.FusedLocationApi.removeLocationUpdates(mGoogleApiClient,this);
+        LocationServices.FusedLocationApi.removeLocationUpdates(mGoogleApiClient, this);
     }
 
     @Override
@@ -308,6 +372,7 @@ public class DirectionsActivity extends AppCompatActivity implements OnMapReadyC
         }
 
     }
+
     @Override
     public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions,
                                            @NonNull int[] grantResults) {
