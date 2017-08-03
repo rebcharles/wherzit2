@@ -20,12 +20,15 @@ import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.FragmentManager;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
+import android.text.Editable;
 import android.text.Html;
 import android.text.Layout;
+import android.text.TextWatcher;
 import android.text.method.ScrollingMovementMethod;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
+import android.widget.EditText;
 import android.widget.LinearLayout;
 import android.widget.RatingBar;
 import android.widget.TextView;
@@ -36,10 +39,14 @@ import com.google.android.gms.common.api.GoogleApiClient;
 import com.google.android.gms.common.api.PendingResult;
 import com.google.android.gms.common.api.ResultCallback;
 import com.google.android.gms.common.api.Status;
+import com.google.android.gms.common.data.DataBuffer;
+import com.google.android.gms.common.data.DataBufferUtils;
 import com.google.android.gms.location.FusedLocationProviderApi;
 import com.google.android.gms.location.LocationListener;
 import com.google.android.gms.location.LocationRequest;
 import com.google.android.gms.location.LocationServices;
+import com.google.android.gms.location.places.AutocompletePrediction;
+import com.google.android.gms.location.places.AutocompletePredictionBuffer;
 import com.google.android.gms.location.places.Place;
 import com.google.android.gms.location.places.PlaceBuffer;
 import com.google.android.gms.location.places.Places;
@@ -50,9 +57,12 @@ import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.LatLng;
+import com.google.android.gms.maps.model.LatLngBounds;
 import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.android.gms.maps.model.Polyline;
 import com.google.android.gms.maps.model.PolylineOptions;
+import com.google.gson.Gson;
+import com.google.gson.reflect.TypeToken;
 import com.google.maps.android.PolyUtil;
 
 import org.json.JSONArray;
@@ -65,6 +75,7 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.lang.reflect.Type;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -73,6 +84,8 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
+
 
 import javax.net.ssl.HttpsURLConnection;
 
@@ -100,7 +113,9 @@ public class RoutingActivity extends AppCompatActivity implements GoogleApiClien
     private HashMap<CharSequence, String> waypoints;
     LatLng currentLocation;
     private Polyline currentRoute;
-
+    public PendingResult<AutocompletePredictionBuffer> results;
+    public ArrayList<AutocompletePrediction> predictions;
+    public Type predictionType = new TypeToken<ArrayList<AutocompletePrediction>>() {}.getType();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -173,6 +188,7 @@ public class RoutingActivity extends AppCompatActivity implements GoogleApiClien
 
                     intent.putExtras(extras);
                 }
+
                 startActivity(intent);
             }
         });
@@ -231,37 +247,73 @@ public class RoutingActivity extends AppCompatActivity implements GoogleApiClien
 
         });
 
-
-
-        PlaceAutocompleteFragment stopFragment = (PlaceAutocompleteFragment)
-                getFragmentManager().findFragmentById(R.id.autocompleteStop);
-        stopFragment.setHint("Add a stop");
-
-
-        if(!waypoints.isEmpty()){
-            updateStopsView();
-        }
-
-        stopFragment.setOnPlaceSelectedListener(new PlaceSelectionListener() {
+        EditText stopFragment = (EditText)  findViewById(R.id.autocompleteStop);
+        stopFragment.setOnFocusChangeListener(new View.OnFocusChangeListener() {
             @Override
-            public void onPlaceSelected(Place place) {
+            public void onFocusChange(View view, boolean hasFocus) {
+                if(!hasFocus){
+                    final CharSequence charCopy = ((EditText) findViewById(R.id.autocompleteStop)).getText();
+                    Autocompleter predictor = new Autocompleter();
+                    try {
+                        Gson predictionStatus = new Gson();
+                        Status status = (Status) predictionStatus.fromJson(predictor.execute(charCopy.toString()).get(), Status.class);
+                        if(!status.isSuccess()){
+                            Log.i(TAG, "Status returned: " + status.toString());
+                        }
+                    } catch (InterruptedException | ExecutionException e) {
+                        Log.e(TAG, e.getMessage());
+                    }
+                    Log.i(TAG, "Predictions size:" + predictions.size());
+                    long shortestSoFar = Long.MAX_VALUE;
+                    String bestPlace = "";
+                    for (int j = 0;
+                         j < (predictions.size() < 5 ? predictions.size() : 5);
+                         j++) {
+                        long distance = 0;
+                        AutocompletePrediction prediction = predictions.get(j);
+                        Log.i(TAG, "About to send:" + prediction.getPlaceId());
+                        String test_response = sendRequest(waypoints, prediction.getPlaceId(),prediction.getPrimaryText(null));
+                        Log.i(TAG, "Received: "+ test_response);
+                        try {
+                            JSONObject test_JSON = new JSONObject(test_response);
+                            JSONArray leg_array = test_JSON.getJSONArray("routes").getJSONObject(0).getJSONArray("legs");
+                            for (int k=0; k <leg_array.length(); k++ ){
+                                distance += Long.valueOf(leg_array.getJSONObject(k).getJSONObject("duration").get("value").toString());
+                            }
+                            if (distance > 0 && distance <shortestSoFar) {
+                                shortestSoFar= distance;
+                                bestPlace = predictions.get(j).getPlaceId();
+                            }
+                        }catch (JSONException e){
+                            Log.i(TAG, "Failed to get test object");
+                        }
+                    }
+                    Log.i(TAG, "Before put: " + waypoints.size());
+                    waypoints.put(charCopy, bestPlace);
+                    Log.i(TAG, "After put: " + waypoints.size());
 
-                Log.i(TAG, " =========== 227:onPlaceSelected ========= ");
+                    updateStopsView();
 
-                waypoints.put(place.getName(),place.getId());
-                Log.i(TAG,String.valueOf(waypoints.size()));
-                updateStopsView();
+                    Places.GeoDataApi.getPlaceById(mGoogleApiClient, bestPlace)
+                            .setResultCallback(new ResultCallback<PlaceBuffer>() {
+                                @Override
+                                public void onResult(PlaceBuffer places) {
+                                    if (places.getStatus().isSuccess() && places.getCount() > 0) {
+                                        Log.i(TAG, "Place found: " + places.get(0).getName());
+                                        placeMarker(places.get(0));
+                                    } else {
+                                        Log.e(TAG, "Place not found");
+                                    }
+                                    //Destination
+                                    places.release();
+                                }
+                            });
 
 
-                placeMarker(place);
-
-            }
-
-            @Override
-            public void onError(Status status) {
-
+                }
             }
         });
+
         //Destination
         PlaceAutocompleteFragment destFragment = (PlaceAutocompleteFragment)
                 getFragmentManager().findFragmentById(R.id.autocompleteDest);
@@ -289,9 +341,6 @@ public class RoutingActivity extends AppCompatActivity implements GoogleApiClien
 
 
         });
-
-
-//        sendJSON();
 
 
     }
@@ -537,7 +586,14 @@ public class RoutingActivity extends AppCompatActivity implements GoogleApiClien
             super.onPostExecute(result);
         }
     }
-    public String sendRequest() {
+
+    public String sendRequest(HashMap<CharSequence, String> waypoints, String place_id, CharSequence name){
+        HashMap<CharSequence, String> waypoints2 = new HashMap<CharSequence, String>(waypoints);
+        waypoints2.put(name,place_id);
+        return sendRequest(waypoints2);
+
+    }
+    public String sendRequest(HashMap<CharSequence, String> waypoints) {
 
         Log.i(TAG, " =========== sendRequest ========= ");
 
@@ -611,8 +667,7 @@ public class RoutingActivity extends AppCompatActivity implements GoogleApiClien
         currentStops.setText(stopNames.toString());
         currentStops.setVisibility(View.VISIBLE);
         mMap.setPadding(0,450,0,0);
-        PlaceAutocompleteFragment autocompleteFragmentStops = (PlaceAutocompleteFragment)
-                getFragmentManager().findFragmentById(R.id.autocompleteStop);
+        EditText autocompleteFragmentStops = (EditText)findViewById(R.id.autocompleteStop);
         autocompleteFragmentStops.setText("");
     }
 
@@ -621,7 +676,7 @@ public class RoutingActivity extends AppCompatActivity implements GoogleApiClien
         Log.i(TAG, " =========== sendJSON ========= ");
 
         try {
-            json_response = new JSONObject(sendRequest());
+            json_response = new JSONObject(sendRequest(waypoints));
             if (!json_response.get("status").equals("OK")) {
                 Log.e(TAG, "Error getting directions");
                 Log.e(TAG, "Status: " + json_response.get("status"));
@@ -653,6 +708,36 @@ public class RoutingActivity extends AppCompatActivity implements GoogleApiClien
 
         }
     }
+
+    public class  Autocompleter  extends AsyncTask<String, Void, String> {
+
+        @Override
+        protected String doInBackground(String... params) {
+            CharSequence charSequence = params[0];
+            LatLngBounds.Builder bounds = LatLngBounds.builder();
+            bounds.include(new LatLng(myLatitude, myLongitude));
+            results =
+                    Places.GeoDataApi.getAutocompletePredictions(
+                            mGoogleApiClient, charSequence.toString(), bounds.build(), null);
+            AutocompletePredictionBuffer autocompletePredictions = results.await(60, TimeUnit.SECONDS);
+
+            final com.google.android.gms.common.api.Status status = autocompletePredictions.getStatus();
+
+            if(!status.isSuccess()) {
+                Toast.makeText(getApplicationContext(), "Error getting your predictions" + status.toString(),
+                        Toast.LENGTH_SHORT).show();
+                Log.i(TAG, "Failed to get autocomplete predictions for" + charSequence);
+                autocompletePredictions.release();
+                return null;
+            }
+            predictions =
+                    DataBufferUtils.freezeAndClose(autocompletePredictions);
+
+            Gson predictionStatus = new Gson();
+            return predictionStatus.toJson(status, com.google.android.gms.common.api.Status.class);
+        }
+    }
+
 
 }
 
