@@ -53,6 +53,7 @@ import com.google.android.gms.maps.MapFragment;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.LatLng;
+import com.google.android.gms.maps.model.LatLngBounds;
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.android.gms.tasks.Task;
@@ -95,7 +96,7 @@ public class DirectionsActivity extends AppCompatActivity implements OnMapReadyC
     private boolean permissionIsGranted = false;
     private FusedLocationProviderClient mFusedLocationClient;
     private LocationCallback mLocationCallback;
-    private LatLng currentLocation;
+    private Location currentLocation;
     private JSONObject jsonResponse;
     private String destinationId;
     private String destinationChanged;
@@ -110,6 +111,7 @@ public class DirectionsActivity extends AppCompatActivity implements OnMapReadyC
     TextView textViewToChange;
     String instructions;
     List<Route> routes;
+    Double locationsAreEqual = 10.668;
 
 
     @Override
@@ -145,6 +147,8 @@ public class DirectionsActivity extends AppCompatActivity implements OnMapReadyC
         String jsonString = extras.getString("jsonResponse");
         origin = extras.getString("origin");
 
+
+
         textViewToChange = (TextView) findViewById(R.id.directions);
 
 
@@ -173,6 +177,7 @@ public class DirectionsActivity extends AppCompatActivity implements OnMapReadyC
             e.printStackTrace();
         }
 
+
         //parsing data
         try {
             routes = parseJsonResponse(jsonString);
@@ -185,12 +190,27 @@ public class DirectionsActivity extends AppCompatActivity implements OnMapReadyC
 
     protected void setText(int i) throws JSONException {
 
+        Log.i("valueOfI", Integer.toString(i));
+        Log.i("size", Integer.toString(routes.size()));
+
         //getting ith step
         JSONObject jsonOBJ = jsonResponse.getJSONArray("routes").getJSONObject(0)
                 .getJSONArray("legs").getJSONObject(0).getJSONArray("steps").getJSONObject(i);
 
-        Log.i("jsonStepArray",jsonResponse.getJSONArray("routes").getJSONObject(0)
-                .getJSONArray("legs").getJSONObject(0).getJSONArray("steps").toString());
+        JSONArray jsonArray = jsonResponse.getJSONArray("routes").getJSONObject(0)
+                .getJSONArray("legs").getJSONObject(0).getJSONArray("steps");
+
+        for (int j = 0; j < jsonArray.length(); j++) {
+
+            Log.i("endLocation",  j + " " + jsonArray.getJSONObject(j).getString("end_location"));
+            Log.i("StartLocation",  j + " " + jsonArray.getJSONObject(j).getString("start_location"));
+            Log.i("HTML", j + " " +  jsonArray.getJSONObject(j).getString("html_instructions"));
+            if (jsonArray.getJSONObject(j).has("maneuver")) {
+                Log.i("Maneuver", j + " " +  jsonArray.getJSONObject(j).getString("maneuver"));
+            }
+            Log.i("Distance", j + " " + jsonArray.getJSONObject(j).getJSONObject("distance").getString("text"));
+
+        }
 
 
         if (jsonOBJ.has("maneuver")) {
@@ -225,31 +245,48 @@ public class DirectionsActivity extends AppCompatActivity implements OnMapReadyC
 
     protected void changeStep() throws JSONException {
 
+        Log.i(TAG, " =========== changeStep ========= ");
+
         int i = 0;
         while (i < routes.size()) {
 
             //coordinates for end location
             Double latEndLoc = routes.get(i).endLocation.lat;
             Double lngEndLoc = routes.get(i).endLocation.lng;
+            Location endLocation = new Location("");
+            endLocation.setLatitude(latEndLoc);
+            endLocation.setLongitude(lngEndLoc);
 
+            //calculating distance between end location and current location
+            float distanceInMetersOne = endLocation.distanceTo(currentLocation);
 
+                // if distance < 35 feet, locations are considered equal.
+                if (distanceInMetersOne < locationsAreEqual) {
+                    //user has reached last step
+                    if (i == (routes.size() - 1)) {
 
+                        Log.i(TAG, " =========== lastIndex  ========= ");
 
-            if ((latEndLoc - myLatitude) <= 0.000001) {
-                if ((lngEndLoc - myLongitude) <= 0.000001) {
+                        textViewToChange.setText("You have reached your destination");
 
-                    Log.i("enteredIfStatement", "finally");
+                    }
+
+                    Log.i(TAG, " =========== enteredIfBranch  ========= ");
+
                     setText(i + 1);
                     return;
 
                 }
 
-            }
+
             i++;
+
         }
-        return;
+
+
 
     }
+
 
     @Override
     public void onMapReady(GoogleMap googleMap) {
@@ -312,21 +349,24 @@ public class DirectionsActivity extends AppCompatActivity implements OnMapReadyC
         Log.i(TAG, " =========== 3rd ========= ");
 
         //setting location to last known location
-        Location location = LocationServices.FusedLocationApi.getLastLocation(mGoogleApiClient);
+        currentLocation = LocationServices.FusedLocationApi.getLastLocation(mGoogleApiClient);
         requestLocationUpdates();
 
-        myLatitude = location.getLatitude();
-        myLongitude = location.getLongitude();
+        myLatitude = currentLocation.getLatitude();
+        myLongitude = currentLocation.getLongitude();
 
-        currentLocation = new LatLng(myLatitude, myLongitude);
+
+       currentLocation.setLatitude(myLatitude);
+       currentLocation.setLongitude(myLongitude);
+
         try {
             setText(0);
         } catch (JSONException e) {
             e.printStackTrace();
         }
 
-        Log.i("Location", "Latitude: " + String.valueOf(location.getLatitude())
-                + "\n" + "Longitude: " + String.valueOf(location.getLongitude()));
+        Log.i("Location", "Latitude: " + String.valueOf(myLatitude)
+                + "\n" + "Longitude: " + String.valueOf(myLongitude));
 
         Log.i("currentLocation", currentLocation.toString());
     }
@@ -386,6 +426,9 @@ public class DirectionsActivity extends AppCompatActivity implements OnMapReadyC
 
         myLatitude = location.getLatitude();
         myLongitude = location.getLongitude();
+
+        currentLocation.setLatitude(myLatitude);
+        currentLocation.setLongitude(myLongitude);
 
         Log.i("Location", "Latitude: " + String.valueOf(location.getLatitude())
                 + "\n" + "Longitude: " + String.valueOf(location.getLongitude()));

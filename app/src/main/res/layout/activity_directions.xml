@@ -6,11 +6,12 @@
     <TextView
         android:id="@+id/directions"
         android:layout_width="match_parent"
-        android:layout_height="103dp"
+        android:layout_height="110dp"
+        android:background="@android:color/holo_blue_light"
         android:gravity="center"
         android:orientation="vertical"
-        android:textColor="@color/common_google_signin_btn_text_light_pressed"
-        android:textSize="20sp"
+        android:textColor="@color/common_google_signin_btn_text_dark_default"
+        android:textSize="30sp"
         android:typeface="normal" />
 
     <fragment
