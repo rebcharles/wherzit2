@@ -74,11 +74,13 @@
             android:background="@android:drawable/screen_background_light_transparent">
 
 
-            <fragment
+            <EditText
                 android:id="@+id/autocompleteStop"
-                android:name="com.google.android.gms.location.places.ui.PlaceAutocompleteFragment"
+                android:inputType="text"
+                android:textSize="20sp"
+                android:textAlignment="center"
                 android:layout_width="match_parent"
-                android:layout_height="30dp"
+                android:layout_height="wrap_content"
                 android:layout_alignParentEnd="true"
                 tools:context="com.wherzit.sammy.wherzit.MainActivity" />
         </android.support.v7.widget.CardView>
