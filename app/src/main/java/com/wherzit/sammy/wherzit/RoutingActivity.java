@@ -174,12 +174,13 @@ public class RoutingActivity extends AppCompatActivity implements GoogleApiClien
                     extras.putString("jsonResponse", json_response.toString());
 
                     if (origin != null) {
-                        extras.putString("origin",origin.getLatLng().toString());
+                        extras.putString("originChanged",origin.getLatLng().toString());
+
                     }
 
 
                     if(destinationChanged != null) {
-                        extras.putString("destinationID",destinationChanged.getLatLng().toString());
+                        extras.putString("destinationChanged",destinationChanged.getLatLng().toString());
                     }
 
                     else {

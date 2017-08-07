@@ -101,17 +101,18 @@ public class DirectionsActivity extends AppCompatActivity implements OnMapReadyC
     private String destinationId;
     private String destinationChanged;
     private String waypoints;
-    private String origin;
+    private String originString;
     private String[] originLatLng;
     private double originLongitude;
     private double originLatitude;
-    private String[] destinationChangedLatLng;
+    private Location origin = new Location("initialize");
     double dCLng;
     double dCLat;
     TextView textViewToChange;
     String instructions;
     List<Route> routes;
     Double locationsAreEqual = 10.668;
+    float distanceInMetersOne;
 
 
     @Override
@@ -128,39 +129,31 @@ public class DirectionsActivity extends AppCompatActivity implements OnMapReadyC
 
         buildClient();
 
-        //fetching json response and creating object
-
+        //fetching json response and origin
         Bundle extras = getIntent().getExtras();
-        destinationId = extras.getString("destinationID");
-
-        if (destinationId != null) {
-            Log.i("destinationID", destinationId);
-        }
-
-        destinationChanged = extras.getString("destinationChanged");
-        if (destinationChanged != null) {
-            Log.i("destinationChanged", destinationChanged);
-            double dCLat = Double.parseDouble(destinationChangedLatLng[0]);
-            double dCLng = Double.parseDouble(destinationChangedLatLng[1]);
-        }
-
         String jsonString = extras.getString("jsonResponse");
-        origin = extras.getString("origin");
+        originString = extras.getString("originChanged");
 
+
+
+        if (originString != null) {
+            Log.i("origin", originString);
+
+            //splitting string to get origin coordinates
+            String[] originLatLng = originString.split("\\(");
+            String[] originLatLng1 = originLatLng[1].split(",");
+            String[] originLatLng2 = originLatLng1[1].split("\\)");
+
+            double originLatitude = Double.parseDouble(originLatLng1[0]);
+            double originLongitude = Double.parseDouble(originLatLng2[0]);
+
+            origin.setLongitude(originLongitude);
+            origin.setLatitude(originLatitude);
+
+        }
 
 
         textViewToChange = (TextView) findViewById(R.id.directions);
-
-
-        if (origin == null) {
-            Log.i("origin", "null");
-        } else {
-            Log.i("origin", origin.toString());
-            String[] originLatLng = origin.split(",");
-            double originLatitude = Double.parseDouble(originLatLng[0]);
-            double originLongitude = Double.parseDouble(originLatLng[1]);
-
-        }
 
         try {
             jsonResponse = new JSONObject(jsonString);
@@ -200,6 +193,7 @@ public class DirectionsActivity extends AppCompatActivity implements OnMapReadyC
         JSONArray jsonArray = jsonResponse.getJSONArray("routes").getJSONObject(0)
                 .getJSONArray("legs").getJSONObject(0).getJSONArray("steps");
 
+        //for testing
         for (int j = 0; j < jsonArray.length(); j++) {
 
             Log.i("endLocation",  j + " " + jsonArray.getJSONObject(j).getString("end_location"));
@@ -221,7 +215,7 @@ public class DirectionsActivity extends AppCompatActivity implements OnMapReadyC
 
         } else {
 
-
+            //getting instructions
             if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.N) {
 
                 Log.i("jsonObj", jsonOBJ.getString("html_instructions"));
@@ -257,34 +251,39 @@ public class DirectionsActivity extends AppCompatActivity implements OnMapReadyC
             endLocation.setLatitude(latEndLoc);
             endLocation.setLongitude(lngEndLoc);
 
-            //calculating distance between end location and current location
-            float distanceInMetersOne = endLocation.distanceTo(currentLocation);
+            //if user does not change origin from current location
+            if (originString == null) {
 
-                // if distance < 35 feet, locations are considered equal.
-                if (distanceInMetersOne < locationsAreEqual) {
-                    //user has reached last step
-                    if (i == (routes.size() - 1)) {
+                //calculating distance between end location and current location
+                distanceInMetersOne = endLocation.distanceTo(currentLocation);
 
-                        Log.i(TAG, " =========== lastIndex  ========= ");
+            }
 
-                        textViewToChange.setText("You have reached your destination");
+            //if they change origin
+            else {
 
-                    }
+                distanceInMetersOne = endLocation.distanceTo(origin);
+            }
 
-                    Log.i(TAG, " =========== enteredIfBranch  ========= ");
+            // if distance < 35 feet, locations are considered equal.
+            if (distanceInMetersOne < locationsAreEqual) {
+                //user has reached last step
+                if (i == (routes.size() - 1)) {
 
-                    setText(i + 1);
-                    return;
+                    Log.i(TAG, " =========== lastIndex  ========= ");
+
+                    textViewToChange.setText("You have reached your destination");
 
                 }
 
+                Log.i(TAG, " =========== enteredIfBranch  ========= ");
 
+                setText(i + 1);
+                return;
+
+            }
             i++;
-
         }
-
-
-
     }
 
 
@@ -354,7 +353,6 @@ public class DirectionsActivity extends AppCompatActivity implements OnMapReadyC
 
         myLatitude = currentLocation.getLatitude();
         myLongitude = currentLocation.getLongitude();
-
 
        currentLocation.setLatitude(myLatitude);
        currentLocation.setLongitude(myLongitude);
