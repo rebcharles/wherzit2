@@ -56,8 +56,10 @@ import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
+import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.LatLngBounds;
+import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.android.gms.maps.model.Polyline;
 import com.google.android.gms.maps.model.PolylineOptions;
@@ -116,9 +118,16 @@ public class RoutingActivity extends AppCompatActivity implements GoogleApiClien
     public PendingResult<AutocompletePredictionBuffer> results;
     public ArrayList<AutocompletePrediction> predictions;
     public Type predictionType = new TypeToken<ArrayList<AutocompletePrediction>>() {}.getType();
+    private Marker originMarker;
+    private Marker destinationMarker;
+    private Marker stopMarker;
+    Location location;
+    PlaceAutocompleteFragment originFragment;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+
 
         Log.i(TAG, "============ onCreate ============");
 
@@ -210,7 +219,12 @@ public class RoutingActivity extends AppCompatActivity implements GoogleApiClien
                         destFragment.setHint(destination != null ?
                                 destination.getName() :"Choose a destination!");
                         if (mMap != null){
-                            mMap.addMarker(new MarkerOptions().position(destination.getLatLng()).title(destination.getName().toString()));
+
+                            destinationMarker = mMap.addMarker(new MarkerOptions()
+                                    .position(destination.getLatLng())
+                                    .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_GREEN))
+                                    .title(destination.getName().toString()));
+
                             mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(destination.getLatLng(), 12.0f));
                         }
                         places.release();
@@ -218,37 +232,14 @@ public class RoutingActivity extends AppCompatActivity implements GoogleApiClien
                 });
 
         //Origin
-        PlaceAutocompleteFragment originFragment = (PlaceAutocompleteFragment)
+        originFragment = (PlaceAutocompleteFragment)
                 getFragmentManager().findFragmentById(R.id.autocompleteOrigin);
         originFragment.setHint("Current location");
 
-        LatLng locationOrigin= new LatLng (myLatitude, myLongitude);
 
-        Log.i("locationOrigin", locationOrigin.toString());
+//
 
-        //if user changes origin
-        originFragment.setOnPlaceSelectedListener(new PlaceSelectionListener() {
-
-            @Override
-            public void onPlaceSelected(Place place) {
-
-                    Log.i(TAG, " =========== 196:onPlaceSelected ========= ");
-
-                    origin = place;
-
-                    placeMarker(place);
-
-            }
-
-            @Override
-            public void onError(Status status) {
-                Log.i(TAG, "An error occurred: " + status);
-            }
-
-
-        });
-
-        EditText stopFragment = (EditText)  findViewById(R.id.autocompleteStop);
+        EditText stopFragment = (EditText) findViewById(R.id.autocompleteStop);
         stopFragment.setOnFocusChangeListener(new View.OnFocusChangeListener() {
             @Override
             public void onFocusChange(View view, boolean hasFocus) {
@@ -295,13 +286,21 @@ public class RoutingActivity extends AppCompatActivity implements GoogleApiClien
 
                     updateStopsView();
 
+
                     Places.GeoDataApi.getPlaceById(mGoogleApiClient, bestPlace)
                             .setResultCallback(new ResultCallback<PlaceBuffer>() {
                                 @Override
                                 public void onResult(PlaceBuffer places) {
+
+
                                     if (places.getStatus().isSuccess() && places.getCount() > 0) {
                                         Log.i(TAG, "Place found: " + places.get(0).getName());
-                                        placeMarker(places.get(0));
+
+                                        stopMarker = mMap.addMarker(new MarkerOptions()
+                                                .position(places.get(0).getLatLng())
+                                                .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_VIOLET))
+                                                .title(places.get(0).getName().toString()));
+
                                     } else {
                                         Log.e(TAG, "Place not found");
                                     }
@@ -329,7 +328,10 @@ public class RoutingActivity extends AppCompatActivity implements GoogleApiClien
                 Log.i(TAG, " =========== 254: onPlaceSelected ========= ");
                 destinationChanged = place;
 
-                placeMarker(place);
+                destinationMarker.remove();
+
+                destinationMarker = placeMarkerDestination(place);
+
 
             }
 
@@ -364,12 +366,53 @@ public class RoutingActivity extends AppCompatActivity implements GoogleApiClien
             return;
         }
 
-        Location location = LocationServices.FusedLocationApi.getLastLocation(mGoogleApiClient);
+        location = LocationServices.FusedLocationApi.getLastLocation(mGoogleApiClient);
         requestLocationUpdates();
         myLatitude = location.getLatitude();
         myLongitude = location.getLongitude();
+        location.setLatitude(myLatitude);
+        location.setLongitude(myLongitude);
+
         Log.i(TAG, "Location : " + String.valueOf(myLatitude) + String.valueOf(myLongitude));
         sendJSON();
+
+        LatLng locationLatLng = new LatLng(myLatitude,myLongitude);
+
+        Log.i("locationLatLng", locationLatLng.toString());
+
+
+        //setting marker to current location
+        originMarker = mMap.addMarker(new MarkerOptions()
+                .position(locationLatLng)
+                .title("currentLocation"));
+
+        //if user changes origin
+        originFragment.setOnPlaceSelectedListener(new PlaceSelectionListener() {
+
+            @Override
+            public void onPlaceSelected(Place place) {
+
+                Log.i(TAG, " =========== 196:onPlaceSelected ========= ");
+
+                origin = place;
+
+                Log.i("origin Marker", originMarker.toString());
+
+                originMarker.remove();
+
+                originMarker = placeMarker(place);
+
+            }
+
+            @Override
+            public void onError(Status status) {
+                Log.i(TAG, "An error occurred: " + status);
+            }
+
+
+        });
+
+
 
     }
 
@@ -442,6 +485,11 @@ public class RoutingActivity extends AppCompatActivity implements GoogleApiClien
 
         super.onStart();
         mGoogleApiClient.connect();
+
+        //removing previous origin Marker if coming from Directions Activity
+        if(originMarker != null) {
+            originMarker.remove();
+        }
     }
 
     @Override
@@ -612,7 +660,8 @@ public class RoutingActivity extends AppCompatActivity implements GoogleApiClien
         }
         sb.append("&destination=");
         if (destinationChanged != null) {
-            sb.append(destinationChanged.getLatLng());
+            sb.append("place_id:");
+            sb.append(destinationChanged.getId());
             Log.i(TAG + " desChan", destinationChanged.toString());
         } else {
             sb.append("place_id:");
@@ -695,19 +744,52 @@ public class RoutingActivity extends AppCompatActivity implements GoogleApiClien
 
     }
 
-    public void placeMarker(Place place){
+    public Marker placeMarker(Place place){
         Log.i(TAG, " =========== sendMarker ========= ");
+        Marker marker = null;
         if (mMap == null) {
             Log.i(TAG, "MAP is null");
         } else {
             sendJSON();
 
-            mMap.addMarker(new MarkerOptions().position(place.getLatLng()).title(place.getName().toString()));
+            marker = mMap.addMarker(new MarkerOptions().position(place.getLatLng()).title(place.getName().toString()));
             mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(place.getLatLng(), 12.0f));
             Log.i(TAG, "Place: " + place.getName());
 
+        }
+        //if marker has been set
+        if (marker != null) {
+            return marker;
+        }
+
+        return null;
+
+    }
+
+    public Marker placeMarkerDestination(Place place){
+        Log.i(TAG, " =========== sendMarker ========= ");
+        Marker marker = null;
+        if (mMap == null) {
+            Log.i(TAG, "MAP is null");
+        } else {
+            sendJSON();
+
+            marker = mMap.addMarker(new MarkerOptions()
+                    .position(place.getLatLng())
+                    .title(place.getName().toString())
+                    .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_GREEN)));
+
+            mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(place.getLatLng(), 12.0f));
+            Log.i(TAG, "Place: " + place.getName());
 
         }
+        //if marker has been set
+        if (marker != null) {
+            return marker;
+        }
+
+        return null;
+
     }
 
     public class  Autocompleter  extends AsyncTask<String, Void, String> {

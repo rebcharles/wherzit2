@@ -184,7 +184,6 @@ public class DirectionsActivity extends AppCompatActivity implements OnMapReadyC
     protected void setText(int i) throws JSONException {
 
         Log.i("valueOfI", Integer.toString(i));
-        Log.i("size", Integer.toString(routes.size()));
 
         //getting ith step
         JSONObject jsonOBJ = jsonResponse.getJSONArray("routes").getJSONObject(0)
