@@ -173,10 +173,6 @@ public class RoutingActivity extends AppCompatActivity implements GoogleApiClien
             public void onClick(View view) {
                 Intent intent = new Intent(RoutingActivity.this, DirectionsActivity.class);
 
-                if(json_response == null) {
-
-                    Log.i("null","json is NULL");
-                }
 
                 if (json_response != null) {
                     Bundle extras = new Bundle();
@@ -186,7 +182,6 @@ public class RoutingActivity extends AppCompatActivity implements GoogleApiClien
                         extras.putString("originChanged",origin.getLatLng().toString());
 
                     }
-
 
                     if(destinationChanged != null) {
                         extras.putString("destinationChanged",destinationChanged.getLatLng().toString());
@@ -198,6 +193,8 @@ public class RoutingActivity extends AppCompatActivity implements GoogleApiClien
 
                     intent.putExtras(extras);
                 }
+
+
 
                 startActivity(intent);
             }
@@ -237,8 +234,7 @@ public class RoutingActivity extends AppCompatActivity implements GoogleApiClien
         originFragment.setHint("Current location");
 
 
-//
-
+        //adding stops
         EditText stopFragment = (EditText) findViewById(R.id.autocompleteStop);
         stopFragment.setOnFocusChangeListener(new View.OnFocusChangeListener() {
             @Override
@@ -296,6 +292,9 @@ public class RoutingActivity extends AppCompatActivity implements GoogleApiClien
                                     if (places.getStatus().isSuccess() && places.getCount() > 0) {
                                         Log.i(TAG, "Place found: " + places.get(0).getName());
 
+                                        //readjusting route to include stops
+                                        sendJSON();
+
                                         stopMarker = mMap.addMarker(new MarkerOptions()
                                                 .position(places.get(0).getLatLng())
                                                 .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_VIOLET))
@@ -308,7 +307,6 @@ public class RoutingActivity extends AppCompatActivity implements GoogleApiClien
                                     places.release();
                                 }
                             });
-
 
                 }
             }

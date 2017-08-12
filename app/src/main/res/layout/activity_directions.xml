@@ -6,7 +6,7 @@
     <TextView
         android:id="@+id/directions"
         android:layout_width="match_parent"
-        android:layout_height="110dp"
+        android:layout_height="wrap_content"
         android:background="@android:color/holo_blue_light"
         android:gravity="center"
         android:orientation="vertical"
