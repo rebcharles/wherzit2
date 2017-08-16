@@ -63,6 +63,7 @@ import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.android.gms.maps.model.Polyline;
 import com.google.android.gms.maps.model.PolylineOptions;
+import com.google.android.gms.maps.model.RoundCap;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 import com.google.maps.android.PolyUtil;
@@ -734,7 +735,10 @@ public class RoutingActivity extends AppCompatActivity implements GoogleApiClien
                 List<LatLng> poly = PolyUtil.decode(encodedPolyline);
                 if (currentRoute != null)
                     currentRoute.remove();
-                currentRoute = mMap.addPolyline(new PolylineOptions().addAll(poly));
+                currentRoute = mMap.addPolyline(new PolylineOptions()
+                        .addAll(poly)
+                        .width(20f));
+
             }
         } catch (JSONException e) {
             Log.e(TAG, e.getMessage());

@@ -6,6 +6,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentSender;
 import android.content.pm.PackageManager;
+import android.graphics.Color;
 import android.graphics.Path;
 import android.location.Location;
 import android.location.LocationManager;
@@ -53,10 +54,20 @@ import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.MapFragment;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
+import com.google.android.gms.maps.model.BitmapDescriptor;
+import com.google.android.gms.maps.model.BitmapDescriptorFactory;
+import com.google.android.gms.maps.model.ButtCap;
+import com.google.android.gms.maps.model.Cap;
+import com.google.android.gms.maps.model.Circle;
+import com.google.android.gms.maps.model.CircleOptions;
+import com.google.android.gms.maps.model.CustomCap;
+import com.google.android.gms.maps.model.GroundOverlay;
+import com.google.android.gms.maps.model.GroundOverlayOptions;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.LatLngBounds;
 import com.google.android.gms.maps.model.Polyline;
 import com.google.android.gms.maps.model.PolylineOptions;
+import com.google.android.gms.maps.model.RoundCap;
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.android.gms.tasks.Task;
@@ -110,6 +121,7 @@ public class DirectionsActivity extends AppCompatActivity implements OnMapReadyC
     private double originLongitude;
     private double originLatitude;
     private Location origin = new Location("initialize");
+    private LatLng originCoordinates = null;
     double dCLng;
     double dCLat;
     private String encodedPolyline;
@@ -141,6 +153,7 @@ public class DirectionsActivity extends AppCompatActivity implements OnMapReadyC
         String jsonString = extras.getString("jsonResponse");
         originString = extras.getString("originChanged");
 
+
         textViewToChange = (TextView) findViewById(R.id.directions);
 
 
@@ -156,8 +169,11 @@ public class DirectionsActivity extends AppCompatActivity implements OnMapReadyC
             double originLatitude = Double.parseDouble(originLatLng1[0]);
             double originLongitude = Double.parseDouble(originLatLng2[0]);
 
+
             origin.setLongitude(originLongitude);
             origin.setLatitude(originLatitude);
+
+            originCoordinates = new LatLng(origin.getLatitude(),origin.getLongitude());
 
         }
 
@@ -368,7 +384,6 @@ public class DirectionsActivity extends AppCompatActivity implements OnMapReadyC
 
         curLocationLatLng = new LatLng(myLatitude,myLongitude);
 
-        mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(curLocationLatLng, 20));
 
         try {
             setText(0);
@@ -394,14 +409,27 @@ public class DirectionsActivity extends AppCompatActivity implements OnMapReadyC
                 Log.i("jsonResponse", jsonResponse.toString());
                 List<LatLng> poly = PolyUtil.decode(encodedPolyline);
 
-                Log.i("poly",poly.toString());
-                if (currentRoute == null)
-                    currentRoute = mMap.addPolyline(new PolylineOptions().addAll(poly));
-            }
+                Log.i("poly", poly.toString());
+
+                currentRoute = mMap.addPolyline(new PolylineOptions()
+                        .addAll(poly)
+                        .width(30f)
+                        .color(Color.MAGENTA));
+
+                currentRoute.setStartCap(
+                            new CustomCap(BitmapDescriptorFactory.fromResource(R.drawable.circle),1500f));
+                }
+
+                mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(currentRoute.getPoints().get(0), 17));
+
+                currentRoute.setEndCap(
+                    new CustomCap(BitmapDescriptorFactory.fromResource(R.drawable.circle),1500f));
+
         } catch (JSONException e) {
             e.printStackTrace();
         }
     }
+
 
 
     private void requestLocationUpdates() {
@@ -462,7 +490,17 @@ public class DirectionsActivity extends AppCompatActivity implements OnMapReadyC
         currentLocation.setLatitude(myLatitude);
         currentLocation.setLongitude(myLongitude);
 
-        mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(curLocationLatLng, 18.0f));
+        if (originString != null) {
+
+            mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(originCoordinates, 18.0f));
+
+        }
+
+        else {
+
+            mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(curLocationLatLng, 18.0f));
+        }
+
 
         Log.i("Location", "Latitude: " + String.valueOf(location.getLatitude())
                 + "\n" + "Longitude: " + String.valueOf(location.getLongitude()));
